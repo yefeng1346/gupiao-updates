@@ -1,7 +1,7 @@
 {
-  "version": "1.1.0",
-  "url": "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.1.0/gupiao-windows-2026-09-19-online-update-v1.1.0.zip",
-  "sha256": "96cc85b137fa41fa78e21859e0eb028a2768d228910d8f67b65956670fa88f4f",
-  "notes": "加入 GitHub 在线更新；保留 API Key、历史数据、公式和选股结果。",
+  "version": "1.2.0",
+  "url": "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.2.0/gupiao-windows-2026-09-19-formula-management-v1.2.0.zip",
+  "sha256": "51721d7fc1428f15f2171364679efe6d1dff49438eb142c91809557583a79a7f",
+  "notes": "修复公式管理；支持通达信常见公式写法；支持手动删除选股结果；保留 API Key、历史数据和已保存公式。",
   "published_at": "2026-09-19"
 }
