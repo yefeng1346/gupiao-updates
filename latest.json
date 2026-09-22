@@ -1,7 +1,7 @@
 {
-  "version": "1.3.1",
-  "url": "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.3.1/gupiao-windows-2026-09-22-dual-source-v1.3.1.zip",
-  "sha256": "057E587B00B2C02CDB54D9E1118F7176C38C9EC14E92844E87DEAD401BF92DC3",
-  "notes": "修复双数据源下 TOP 榜互相覆盖；每个榜单独立滚动；窄窗口自动上下排列；保留 API Key、历史数据、公式和选股结果。",
+  "version": "1.3.2",
+  "url": "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.3.2/gupiao-windows-2026-09-22-dual-source-v1.3.2.zip",
+  "sha256": "37D6C0BDD2A69B71D5C71255BDFCC1961A6AB5EAF0E3B951FDB3548CA7A7745F",
+  "notes": "双数据源报告固定左右并排，便于直接对比；每个榜单独立滚动，避免长板块名和列内容互相覆盖；保留 API Key、历史数据、公式和选股结果。",
   "published_at": "2026-09-22"
 }
