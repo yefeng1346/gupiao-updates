@@ -1,7 +1,7 @@
 {
-  "version": "1.4.0",
-  "url": "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.4.0/gupiao-windows-2026-09-27-single-source-capital-flow-v1.4.0.zip",
-  "sha256": "479BE70F56A0F50AF34FA6E1C3F6D5F208D9028C61B9DBE6DEB02DBD5B9DB85C",
-  "notes": "恢复单数据源默认使用方式，支持双窗口多开；新增东方财富板块资金流向榜；资金流向手动刷新，不影响历史报告；保留 API Key、历史数据、公式和选股结果。",
+  "version": "1.4.1",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-09-27-update-network-fix-v1.4.1.zip",
+  "sha256": "12415E50E1E1464D6288383A540B109828DA795F9E335823E71887DD083BCC52",
+  "notes": "修复部分 Windows 网络下载 GitHub Release 压缩包超时的问题：安装包同时提供 Raw 直链，更新器会尝试系统代理和直连并自动重试；保留 API Key、历史数据、公式和选股结果。",
   "published_at": "2026-09-27"
 }
