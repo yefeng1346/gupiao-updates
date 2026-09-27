@@ -1,7 +1,7 @@
 {
   "version": "1.4.3",
-  "url": "https://cdn.jsdelivr.net/gh/yefeng1346/gupiao-updates@main/gupiao-windows-2026-09-27-update-resume-v1.4.3.zip",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-09-27-update-resume-v1.4.3.zip",
   "sha256": "356427E0AFACB3CF800C210EC9BBB92A2D660160F804BFE0A1A6C9E9F2DFE00F",
-  "notes": "修复更新下载被远端重置或超时的问题：小型程序补丁改由 CDN 提供，更新器支持断点续传；同时保留东方财富资金流向修复，不覆盖 API Key、历史数据、公式和选股结果。",
+  "notes": "修复更新下载被远端重置或超时的问题：小型程序补丁改由 GitHub Raw 提供，更新器支持断点续传；同时保留东方财富资金流向修复，不覆盖 API Key、历史数据、公式和选股结果。",
   "published_at": "2026-09-27"
 }
