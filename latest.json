@@ -1,7 +1,7 @@
 {
-  "version": "1.4.1",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-09-27-update-network-fix-v1.4.1.zip",
-  "sha256": "12415E50E1E1464D6288383A540B109828DA795F9E335823E71887DD083BCC52",
-  "notes": "修复部分 Windows 网络下载 GitHub Release 压缩包超时的问题：安装包同时提供 Raw 直链，更新器会尝试系统代理和直连并自动重试；保留 API Key、历史数据、公式和选股结果。",
+  "version": "1.4.2",
+  "url": "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.4.2/gupiao-windows-2026-09-27-eastmoney-flow-v1.4.2.zip",
+  "sha256": "E92BFC9105EAD33C79C6C734289F1351141C93F299EA9B2E453A1AAA33CF9280",
+  "notes": "修复东方财富板块资金流向接口断开问题：改用东方财富数据中心接口并保留备用接口；同时增强更新器的代理、直连、重试和校验，保留 API Key、历史数据、公式和选股结果。",
   "published_at": "2026-09-27"
 }
