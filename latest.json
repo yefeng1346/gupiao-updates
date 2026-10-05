@@ -1,7 +1,7 @@
 {
-  "version": "1.4.3",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-09-27-update-resume-v1.4.3.zip",
-  "sha256": "356427E0AFACB3CF800C210EC9BBB92A2D660160F804BFE0A1A6C9E9F2DFE00F",
-  "notes": "修复更新下载被远端重置或超时的问题：小型程序补丁改由 GitHub Raw 提供，更新器支持断点续传；同时保留东方财富资金流向修复，不覆盖 API Key、历史数据、公式和选股结果。",
-  "published_at": "2026-09-27"
+  "version": "1.4.4",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-05-capital-flow-v1.4.4.zip",
+  "sha256": "63A08C62359E85D8B19B3AC9B90540B0845C5AD8C8A30C4F4799F2DF5ECF2BB5",
+  "notes": "东方财富板块资金流向支持选择报告日期；新增最近10个交易日中主力净流入至少6天榜，并缓存逐日资金数据。在线更新保留 API Key、历史数据、公式和选股结果。",
+  "published_at": "2026-10-05"
 }
