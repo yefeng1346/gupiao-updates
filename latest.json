@@ -1,7 +1,7 @@
 {
-  "version": "1.4.5",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-06-capital-flow-cache-proxy-v1.4.5.zip",
-  "sha256": "FD871230F7A7A57794761E02040E2F6D0EA175D511874A99D9E48CE0E0E7F5DB",
-  "notes": "移除网页实时行情自动刷新；东方财富资金流向查询结果保存到本地，重启后自动恢复；支持手动联网刷新并在失败时回退本地结果；行情请求识别 Windows 系统代理。在线更新保留 API Key、历史数据、公式和选股结果。",
+  "version": "1.4.6",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-06-capital-flow-reliability-v1.4.6.zip",
+  "sha256": "4275B1894C6D9FA097A48DCCD0A38E25B9A0584FB9D97BC986D499484760D44E",
+  "notes": "资金流向查询改为低并发、间隔请求及有限重试，连续连接失败时及时暂停；单个板块失败不再阻止其他结果展示，成功数据逐个保存；新增“补齐缺失数据”，只补未取得的板块；修正历史日期读取，并明确区分数据不足、无符合条件及目录范围未确认；旧版本缓存可恢复，刷新失败保留已显示结果。在线更新保留 API Key、配置、历史数据、公式和选股结果。本版改善查询可靠性，东方财富公开接口仍可能断连，不保证首次联网查询成功。",
   "published_at": "2026-10-06"
 }
