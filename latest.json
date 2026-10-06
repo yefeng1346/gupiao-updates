@@ -1,7 +1,7 @@
 {
-  "version": "1.4.7",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-06-capital-flow-current-restore-v1.4.7.zip",
-  "sha256": "D4A0D34DFF0F4129CE11CB7BFB5FB20B4ED4EB4383003B2FEC77A3AF6C939666",
-  "notes": "恢复与1.4.3相同接口的独立当前资金流向榜：历史接口失败不再影响当前榜。当前榜与历史日期及10日榜明确分开，分别保存；关闭重开恢复本地快照，不自动联网；刷新失败保留旧结果并提示。历史接口仍可能断连，当前数据不会冒充历史数据。在线更新保留 API Key、配置、历史数据、公式和选股结果。",
+  "version": "1.4.8",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-06-capital-flow-clear-cache-v1.4.8.zip",
+  "sha256": "944AA7AFB0ABA74CF51519AC7271DF1B11DBE09BD15667A0F64493ACFFF1EEB8",
+  "notes": "新增独立的“清空资金流向数据”：确认后仅清空概念和行业的当前快照、历史资金流向、10日榜缓存及板块目录，清空前自动备份；保留收盘报告、公式、选股结果和Key。查询进行中禁止清空；清空后手动点击“刷新当前资金流向”重新测试，不自动联网。此功能用于排除旧缓存干扰，不保证修复东方财富接口断连。在线更新不会自动清空用户数据。",
   "published_at": "2026-10-06"
 }
