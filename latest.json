@@ -1,7 +1,7 @@
 {
-  "version": "1.4.8",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-06-capital-flow-clear-cache-v1.4.8.zip",
-  "sha256": "944AA7AFB0ABA74CF51519AC7271DF1B11DBE09BD15667A0F64493ACFFF1EEB8",
-  "notes": "新增独立的“清空资金流向数据”：确认后仅清空概念和行业的当前快照、历史资金流向、10日榜缓存及板块目录，清空前自动备份；保留收盘报告、公式、选股结果和Key。查询进行中禁止清空；清空后手动点击“刷新当前资金流向”重新测试，不自动联网。此功能用于排除旧缓存干扰，不保证修复东方财富接口断连。在线更新不会自动清空用户数据。",
+  "version": "1.4.9",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-06-capital-flow-shared-daily-v1.4.9.zip",
+  "sha256": "72B314DBA2921FA14B2513960FAD7003C06D44A0C5A95631BB4DDF4ECC1ED711",
+  "notes": "打通当前资金流向和历史单日榜：有明确实际时间且已收盘的当前记录自动归档，同日期直接复用；旧版本快照可自动恢复归档，不必清空。刷新当前榜后自动更新下面的本地单日榜，不调用历史接口。按已核验2025/2026休市日历回看最近交易日；单日榜与10日榜分别显示完整度，10日数据不足不阻止单日结果，不能用有缺口的10个日期凑10日榜。盘中、日期不明或未来时间的快照不作为收盘历史。历史接口仍可能断连，需补齐缺失数据或逐日积累才能算10日榜。在线更新保留Key、报告、公式、选股结果和配置，不自动联网或清空数据。",
   "published_at": "2026-10-06"
 }
