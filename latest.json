@@ -1,7 +1,7 @@
 {
-  "version": "1.4.6",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-06-capital-flow-reliability-v1.4.6.zip",
-  "sha256": "4275B1894C6D9FA097A48DCCD0A38E25B9A0584FB9D97BC986D499484760D44E",
-  "notes": "资金流向查询改为低并发、间隔请求及有限重试，连续连接失败时及时暂停；单个板块失败不再阻止其他结果展示，成功数据逐个保存；新增“补齐缺失数据”，只补未取得的板块；修正历史日期读取，并明确区分数据不足、无符合条件及目录范围未确认；旧版本缓存可恢复，刷新失败保留已显示结果。在线更新保留 API Key、配置、历史数据、公式和选股结果。本版改善查询可靠性，东方财富公开接口仍可能断连，不保证首次联网查询成功。",
+  "version": "1.4.7",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-06-capital-flow-current-restore-v1.4.7.zip",
+  "sha256": "D4A0D34DFF0F4129CE11CB7BFB5FB20B4ED4EB4383003B2FEC77A3AF6C939666",
+  "notes": "恢复与1.4.3相同接口的独立当前资金流向榜：历史接口失败不再影响当前榜。当前榜与历史日期及10日榜明确分开，分别保存；关闭重开恢复本地快照，不自动联网；刷新失败保留旧结果并提示。历史接口仍可能断连，当前数据不会冒充历史数据。在线更新保留 API Key、配置、历史数据、公式和选股结果。",
   "published_at": "2026-10-06"
 }
