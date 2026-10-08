@@ -1,7 +1,10 @@
 {
-  "version": "1.4.9",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-06-capital-flow-shared-daily-v1.4.9.zip",
-  "sha256": "72B314DBA2921FA14B2513960FAD7003C06D44A0C5A95631BB4DDF4ECC1ED711",
-  "notes": "打通当前资金流向和历史单日榜：有明确实际时间且已收盘的当前记录自动归档，同日期直接复用；旧版本快照可自动恢复归档，不必清空。刷新当前榜后自动更新下面的本地单日榜，不调用历史接口。按已核验2025/2026休市日历回看最近交易日；单日榜与10日榜分别显示完整度，10日数据不足不阻止单日结果，不能用有缺口的10个日期凑10日榜。盘中、日期不明或未来时间的快照不作为收盘历史。历史接口仍可能断连，需补齐缺失数据或逐日积累才能算10日榜。在线更新保留Key、报告、公式、选股结果和配置，不自动联网或清空数据。",
-  "published_at": "2026-10-06"
+  "version": "1.5.0",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-08-stability-v1.5.0.zip",
+  "urls": [
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.5.0/gupiao-windows-2026-10-08-stability-v1.5.0.zip"
+  ],
+  "sha256": "a393abc38defeb62cd9536478b38d5e830f784cb78f9768021bbfd4a1a51559a",
+  "published_at": "2026-10-08",
+  "notes": "修复本地选股范围和同代码文件冲突，仅扫描沪深北A股；区分过旧/混合日期、历史不足、读取失败与条件不命中。不能由本地K线计算的DYNAINFO实时函数明确提示，不再使用近似值。资金流向保持当前榜独立，历史补齐任务可后台重试、取消、重启恢复，成功数据逐项保存；东方财富历史接口仍可能不可用，数据不足不会算成零或伪造10日榜。免费GitHub更新新增清单备用地址、下载源切换、断点续传、进度与取消；先下载和校验，再关闭安装；多窗口保护与失败回滚。在线升级保留API Key、配置、数据库、公式及选股结果。本次升级成功后自动换入新版更新器，之后更新使用新流程。"
 }
