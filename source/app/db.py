@@ -345,6 +345,8 @@ class Database:
                                  (json.dumps(saved,ensure_ascii=False),saved["id"]))
                     row = None
                 else:
+                    if (saved.get("window_days",10),saved.get("min_inflow_days",6)) != (state.get("window_days",10),state.get("min_inflow_days",6)):
+                        raise ValueError("该日期已有另一组条件的未完成任务，请完成或取消后调整条件")
                     state = saved
             if row:
                 state["status"] = "running"

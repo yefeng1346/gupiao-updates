@@ -144,7 +144,7 @@ class ImportedFlowDatabase:
         return [{**json.loads(row[0]), "fetched_at": row[1]} for row in records]
 
 
-def imported_flow_report(database, source, sector_type, selected_date, limit):
+def imported_flow_report(database, source, sector_type, selected_date, limit, *, window_days=10, min_inflow_days=6):
     if source not in {"tdx_import", "ths_import"}:
         raise ValueError("导入数据来源无效")
     if not selected_date:
@@ -152,7 +152,8 @@ def imported_flow_report(database, source, sector_type, selected_date, limit):
             latest = conn.execute("SELECT MAX(trade_date) FROM imported_capital_flow_daily WHERE source=? AND sector_type=?", (source, sector_type)).fetchone()[0]
         selected_date = latest
     cutoff = selected_date or shanghai_now().date().isoformat()
-    report = fetch_sector_capital_flow_report(sector_type, limit, cutoff, ImportedFlowDatabase(database, source, cutoff), local_only=True)
+    report = fetch_sector_capital_flow_report(sector_type, limit, cutoff, ImportedFlowDatabase(database, source, cutoff), local_only=True,
+                                             window_days=window_days, min_inflow_days=min_inflow_days)
     report.update(source_id=source, source=f"{SOURCE_LABELS[source]}（用户声明来源的本地文件）")
     report["warnings"] = [warning for warning in report["warnings"] if "可联网刷新目录" not in warning]
     report["warnings"] = [warning.replace("未能联网确认所选日期的数据", "此来源未导入所选日期的数据") for warning in report["warnings"]]

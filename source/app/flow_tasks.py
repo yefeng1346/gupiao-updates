@@ -5,7 +5,7 @@ import time
 import uuid
 
 from app.capital_flow import (fetch_sector_capital_flow_report, fetch_sector_capital_flow,
-                              share_current_flow_with_history)
+                              share_current_flow_with_history, validate_flow_rule)
 from app.flow_calendar import shanghai_now
 from app.flow_archive import update_daily
 from app.flow_transport import HISTORY_POOL
@@ -51,7 +51,8 @@ class FlowHistoryJobs:
         if saved is None:
             raise KeyError(job_id)
         try:
-            saved["result"] = fetch_sector_capital_flow_report(saved["sector_type"],1000,saved["date"],database,local_only=True)
+            saved["result"] = fetch_sector_capital_flow_report(saved["sector_type"],1000,saved["date"],database,local_only=True,
+                window_days=saved.get("window_days",10),min_inflow_days=saved.get("min_inflow_days",6))
         except RuntimeError:
             pass
         return saved
@@ -71,7 +72,8 @@ class FlowHistoryJobs:
         with self.lock:
             return any(job["status"] == "running" for job in self.jobs.values())
 
-    def start(self, database, sector_type, selected_date, run_guard, *, recovering=False, mode="history", feed_urls=()):
+    def start(self, database, sector_type, selected_date, run_guard, *, recovering=False, mode="history", feed_urls=(), window_days=10, min_inflow_days=6):
+        validate_flow_rule(window_days,min_inflow_days)
         day = date.fromisoformat(selected_date)
         if sector_type not in {"concept","industry"}:
             raise ValueError("资金流向只支持概念或行业板块")
@@ -82,14 +84,19 @@ class FlowHistoryJobs:
         with self.lock:
             for job_id,job in self.jobs.items():
                 if job["status"] == "running" and (job["sector_type"],job["date"]) == (sector_type,selected_date):
+                    if (job.get("window_days",10),job.get("min_inflow_days",6)) != (window_days,min_inflow_days):
+                        raise ValueError("该日期正在按另一组筛选条件更新，请完成或取消后调整条件")
                     return self._snapshot(job_id)
             if sum(j["status"] == "running" for j in self.jobs.values()) >= 2:
                 raise ValueError("已有两个资金更新任务，请完成或取消后再启动")
             initial = {"id":uuid.uuid4().hex,"status":"running","sector_type":sector_type,"date":selected_date,
-                       "mode":mode,
+                       "mode":mode,"window_days":window_days,"min_inflow_days":min_inflow_days,
                        "attempted":0,"downloaded":0,"failed":0,"total":0,"round":0,"max_rounds":MAX_ROUNDS,
                        "created_at":time.time(),"expires_at":time.time()+JOB_SECONDS,"next_retry_at":0}
             state,claimed = database.claim_flow_job(initial,self.owner,restart_expired=not recovering)
+            # A second process can own this date; never silently show its rule.
+            if (state.get("window_days",10),state.get("min_inflow_days",6)) != (window_days,min_inflow_days):
+                raise ValueError("该日期正在按另一组筛选条件更新，请完成或取消后调整条件")
             if not claimed:
                 return state
             job_id,cancel = state["id"],Event()
@@ -132,9 +139,10 @@ class FlowHistoryJobs:
                     return
                 update({"stage":"current","message":"正在联网更新当前资金数据"})
                 if state.get("mode") == "daily":
-                    report = update_daily(database,sector_type,selected_date,feed_urls=feed_urls,cancel=token,progress=update)
+                    report = update_daily(database,sector_type,selected_date,feed_urls=feed_urls,cancel=token,progress=update,
+                                          window_days=window_days,min_inflow_days=min_inflow_days)
                     status = "paused" if self.stop.is_set() else "cancelled" if token.is_set() else "complete" if (report.get("current_updated") or report.get("rows") or report.get("feed_sync",{}).get("saved_days")) else "failed"
-                    update({"result":report,"status":status,"next_retry_at":0,"message":"当天数据已保存；10日榜只使用完整逐日档案" if status=="complete" else "未取得新数据，已保存记录保留"})
+                    update({"result":report,"status":status,"next_retry_at":0,"message":f"当天数据已保存；{window_days}日榜只使用完整逐日档案" if status=="complete" else "未取得新数据，已保存记录保留"})
                     return
                 try:
                     current = fetch_sector_capital_flow(sector_type,1000)
@@ -145,7 +153,8 @@ class FlowHistoryJobs:
                 except Exception as exc:
                     update({"current_updated":False,"current_error":str(exc)})
                 try:
-                    initial_report = fetch_sector_capital_flow_report(sector_type,1000,selected_date,database,local_only=True)
+                    initial_report = fetch_sector_capital_flow_report(sector_type,1000,selected_date,database,local_only=True,
+                        window_days=window_days,min_inflow_days=min_inflow_days)
                     update({"result":initial_report})
                 except RuntimeError:
                     pass
@@ -166,7 +175,8 @@ class FlowHistoryJobs:
                     retry_after = 0
                     try:
                         report = fetch_sector_capital_flow_report(sector_type,1000,selected_date,database,
-                            retry_missing=True,query_seconds=min(ROUND_SECONDS,max(1,state["expires_at"]-time.time())),progress=progress,cancel=token)
+                            retry_missing=True,query_seconds=min(ROUND_SECONDS,max(1,state["expires_at"]-time.time())),progress=progress,cancel=token,
+                            window_days=window_days,min_inflow_days=min_inflow_days)
                         update({"result":report,"history_transports":report.get("history_transports",{})})
                         if complete(report):
                             update({"status":"complete","message":"下载完成","next_retry_at":0})
@@ -205,7 +215,8 @@ class FlowHistoryJobs:
         for state in database.pending_flow_jobs():
             try:
                 from app.config import settings
-                resumed.append(self.start(database,state["sector_type"],state["date"],run_guard,recovering=True,mode=state.get("mode","history"),feed_urls=settings.flow_feed_urls))
+                resumed.append(self.start(database,state["sector_type"],state["date"],run_guard,recovering=True,mode=state.get("mode","history"),feed_urls=settings.flow_feed_urls,
+                    window_days=state.get("window_days",10),min_inflow_days=state.get("min_inflow_days",6)))
             except ValueError:
                 break
         return resumed

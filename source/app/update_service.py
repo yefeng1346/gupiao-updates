@@ -26,7 +26,7 @@ from urllib.request import ProxyHandler, Request, build_opener, urlopen
 from update_net import open_url
 
 
-CURRENT_VERSION = "1.6.0"
+CURRENT_VERSION = "1.6.1"
 MANIFEST_TIMEOUT_SECONDS = 8.0
 DEFAULT_MANIFEST_URL = "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/latest.json"
 MANIFEST_FALLBACK_URL = "https://api.github.com/repos/yefeng1346/gupiao-updates/contents/latest.json?ref=main"

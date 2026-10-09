@@ -22,6 +22,8 @@ from app.capital_flow import (
     fetch_sector_capital_flow_report,
     present_sector_capital_flow_report,
     share_current_flow_with_history,
+    validate_flow_rule,
+    flow_report_with_rule,
 )
 from app.flow_calendar import shanghai_now, latest_closed_trading_day, SHANGHAI, is_trading_day
 from app.flow_import import import_flow, imported_flow_report, TEMPLATE
@@ -1166,6 +1168,8 @@ class FlowHistoryJobRequest(BaseModel):
     sector_type: Literal["concept", "industry"] = "concept"
     date: str = Field(min_length=10, max_length=10)
     mode: Literal["daily","history"] = "daily"
+    window_days: int = Field(default=10, ge=1, le=60, strict=True)
+    min_inflow_days: int = Field(default=6, ge=1, le=60, strict=True)
 
 
 def flow_operation(function):
@@ -1235,7 +1239,8 @@ def import_capital_flow(request: FlowImportRequest):
 def start_flow_history_job(request: FlowHistoryJobRequest):
     try:
         with _flow_operation_lock:
-            return _flow_jobs.start(database, request.sector_type, request.date, flow_operation,mode=request.mode,feed_urls=settings.flow_feed_urls)
+            return _flow_jobs.start(database, request.sector_type, request.date, flow_operation,mode=request.mode,feed_urls=settings.flow_feed_urls,
+                                   window_days=request.window_days,min_inflow_days=request.min_inflow_days)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -1249,7 +1254,8 @@ def pending_flow_history_jobs():
 def read_flow_history_job(job_id: str):
     try:
         job = _flow_jobs.snapshot(job_id,database)
-        report = flow_preview(job.get("result"), job["sector_type"], job["date"], 1000)
+        report = flow_preview(job.get("result"), job["sector_type"], job["date"], 1000,
+                              window_days=job.get("window_days",10),min_inflow_days=job.get("min_inflow_days",6))
         if report:
             job["result"] = report
         return job
@@ -1265,7 +1271,7 @@ def cancel_flow_history_job(job_id: str):
         raise HTTPException(status_code=404, detail="找不到补齐任务") from exc
 
 
-def flow_preview(report, sector_type, selected_date, limit):
+def flow_preview(report, sector_type, selected_date, limit, *, window_days=10, min_inflow_days=6):
     """Expose an explicit preview without storing it as closing history."""
     result = dict(report or {})
     result["source_id"] = "eastmoney"
@@ -1287,13 +1293,13 @@ def flow_preview(report, sector_type, selected_date, limit):
         closed, _ = latest_closed_trading_day(now.date())
         result.update(ok=True, sector_type=sector_type, requested_date=selected_date,
                       resolved_date=closed.isoformat(), report_date=None, rows=[], total=0,
-                      window_dates=[], window_complete=False, daily_complete=False, partial=True,
+                      window_dates=[], window_days=window_days, min_inflow_days=min_inflow_days, window_complete=False, daily_complete=False, partial=True,
                       date_confirmed=False, catalog_complete=False, inflow_days_rank=[], cached=True,
                       source="东方财富本地盘中快照", history_coverage={"requested_boards": len(rows), "complete_boards": 0, "window_days": 0},
                       warnings=["今日尚未收盘；可以查看今日预览，收盘历史尚无记录，需要另行补齐。"])
     result["preview"] = {"date": selected_date, "rows": sorted(rows, key=lambda row: row.get("main_net_inflow") or 0, reverse=True)[:limit],
                          "total": len(rows), "updated_at": current.get("updated_at"),
-                         "note": "今日盘中预览，来自已保存的当前快照，不是收盘数据，不参与10日资金流入榜。"}
+                         "note": f"今日盘中预览，来自已保存的当前快照，不是收盘数据，不参与{window_days}日资金流入榜。"}
     return result
 
 
@@ -1342,33 +1348,45 @@ def sector_capital_flow(
     refresh: bool = Query(default=False),
     retry_missing: bool = Query(default=False),
     source: Literal["eastmoney", "tdx_import", "ths_import"] = "eastmoney",
+    window_days: int = Query(default=10, ge=1, le=60),
+    min_inflow_days: int = Query(default=6, ge=1, le=60),
 ):
     """Return a saved snapshot first; fetch from Eastmoney only if needed."""
     selected_date = report_date or shanghai_now().date().isoformat()
+    try:
+        validate_flow_rule(window_days,min_inflow_days)
+    except ValueError as exc:
+        raise HTTPException(status_code=400,detail=str(exc)) from exc
     if source != "eastmoney":
         try:
-            return imported_flow_report(database, source, sector_type, selected_date, limit)
+            return imported_flow_report(database, source, sector_type, selected_date, limit,
+                                        window_days=window_days,min_inflow_days=min_inflow_days)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except RuntimeError as exc:
             raise HTTPException(status_code=404, detail="此来源、类型和日期暂无可用导入数据；请先导入逐日板块资金文件") from exc
     saved = database.get_sector_capital_flow_report(sector_type, selected_date)
+    if saved:
+        saved = flow_report_with_rule(saved,window_days,min_inflow_days)
     try:
         if not refresh and not retry_missing:
             try:
                 # Rebuild from shared daily rows instead of returning a stale
                 # report snapshot, and never wait for 10-day backfill here.
                 return flow_preview(fetch_sector_capital_flow_report(
-                    sector_type, limit, selected_date, database, local_only=True), sector_type, selected_date, limit)
+                    sector_type, limit, selected_date, database, local_only=True,
+                    window_days=window_days,min_inflow_days=min_inflow_days), sector_type, selected_date, limit,
+                    window_days=window_days,min_inflow_days=min_inflow_days)
             except RuntimeError:
                 if saved:
-                    return flow_preview(present_sector_capital_flow_report(saved, limit, cached=True), sector_type, selected_date, limit)
-                preview = flow_preview(None, sector_type, selected_date, limit)
+                    return flow_preview(present_sector_capital_flow_report(saved, limit, cached=True), sector_type, selected_date, limit,
+                                        window_days=window_days,min_inflow_days=min_inflow_days)
+                preview = flow_preview(None, sector_type, selected_date, limit,window_days=window_days,min_inflow_days=min_inflow_days)
                 if preview:
                     return preview
                 old_report = database.get_sector_capital_flow_report(sector_type,max_date=selected_date)
                 if old_report:
-                    result = present_sector_capital_flow_report(old_report,limit,cached=True)
+                    result = present_sector_capital_flow_report(flow_report_with_rule(old_report,window_days,min_inflow_days),limit,cached=True)
                     result.update(requested_date=selected_date,date_confirmed=False,partial=True,
                                   refresh_error="所选日期没有档案，正在展示已有旧记录；未联网")
                     return result
@@ -1376,7 +1394,8 @@ def sector_capital_flow(
         return flow_preview(fetch_sector_capital_flow_report(
             sector_type, limit, selected_date, database, refresh=refresh and not retry_missing,
             retry_missing=retry_missing, daily_only=not retry_missing,
-        ), sector_type, selected_date, limit)
+            window_days=window_days,min_inflow_days=min_inflow_days,
+        ), sector_type, selected_date, limit,window_days=window_days,min_inflow_days=min_inflow_days)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except HTTPException:
@@ -1385,13 +1404,13 @@ def sector_capital_flow(
         if not saved:
             saved = database.get_sector_capital_flow_report(sector_type, max_date=selected_date)
         if saved:
-            result = present_sector_capital_flow_report(saved, limit, cached=True)
+            result = present_sector_capital_flow_report(flow_report_with_rule(saved,window_days,min_inflow_days), limit, cached=True)
             result["cached_requested_date"] = result.get("requested_date")
             result["requested_date"] = selected_date
             result["date_confirmed"] = False
             result["partial"] = True
             result["refresh_error"] = f"{type(exc).__name__}: {exc}"
-            return flow_preview(result, sector_type, selected_date, limit)
+            return flow_preview(result, sector_type, selected_date, limit,window_days=window_days,min_inflow_days=min_inflow_days)
         raise HTTPException(
             status_code=502,
             detail=f"东方财富板块资金流向读取失败：{type(exc).__name__}: {exc}",
@@ -1405,11 +1424,18 @@ def cached_sector_capital_flow(
     limit: int = Query(default=50, ge=1, le=1000),
     report_date: str | None = Query(default=None, alias="date"),
     source: Literal["eastmoney", "tdx_import", "ths_import"] = "eastmoney",
+    window_days: int = Query(default=10, ge=1, le=60),
+    min_inflow_days: int = Query(default=6, ge=1, le=60),
 ):
     """Restore the most recent saved flow result without making network calls."""
+    try:
+        validate_flow_rule(window_days,min_inflow_days)
+    except ValueError as exc:
+        raise HTTPException(status_code=400,detail=str(exc)) from exc
     if source != "eastmoney":
         try:
-            return imported_flow_report(database, source, sector_type, report_date, limit)
+            return imported_flow_report(database, source, sector_type, report_date, limit,
+                                        window_days=window_days,min_inflow_days=min_inflow_days)
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         except RuntimeError as exc:
@@ -1417,18 +1443,19 @@ def cached_sector_capital_flow(
     saved = database.get_sector_capital_flow_report(sector_type, report_date)
     try:
         return flow_preview(fetch_sector_capital_flow_report(
-            sector_type, limit, report_date, database, local_only=True), sector_type,
-            report_date or shanghai_now().date().isoformat(), limit)
+            sector_type, limit, report_date, database, local_only=True,window_days=window_days,min_inflow_days=min_inflow_days), sector_type,
+            report_date or shanghai_now().date().isoformat(), limit,window_days=window_days,min_inflow_days=min_inflow_days)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except RuntimeError as exc:
         if saved is None:
-            preview = flow_preview(None, sector_type, report_date or shanghai_now().date().isoformat(), limit)
+            preview = flow_preview(None, sector_type, report_date or shanghai_now().date().isoformat(), limit,
+                                   window_days=window_days,min_inflow_days=min_inflow_days)
             if preview:
                 return preview
             raise HTTPException(status_code=404, detail="本机还没有保存过这个日期的资金流向结果") from exc
-    return flow_preview(present_sector_capital_flow_report(saved, limit, cached=True), sector_type,
-                        report_date or shanghai_now().date().isoformat(), limit)
+    return flow_preview(present_sector_capital_flow_report(flow_report_with_rule(saved,window_days,min_inflow_days), limit, cached=True), sector_type,
+                        report_date or shanghai_now().date().isoformat(), limit,window_days=window_days,min_inflow_days=min_inflow_days)
 
 
 def normalize_quote_row(row: dict) -> dict:

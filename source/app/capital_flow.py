@@ -39,7 +39,6 @@ _EASTMONEY_HISTORY_HOSTS = (
 _FLOW_HISTORY_FIELDS1 = "f1,f2,f3,f7"
 _FLOW_HISTORY_FIELDS2 = "f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f62,f63,f64,f65"
 _FLOW_HISTORY_UT = "b2884a393a59ad64002292a3e90d46a5"
-_FLOW_WINDOW_DAYS = 10
 _FLOW_MAX_WORKERS = 2
 _FLOW_MAX_ATTEMPTS = 3
 _FLOW_QUERY_SECONDS = 60.0
@@ -425,6 +424,26 @@ def share_current_flow_with_history(report: dict[str, Any], database: Any) -> di
     return report
 
 
+def validate_flow_rule(window_days=10, min_inflow_days=6):
+    if (type(window_days) is not int or type(min_inflow_days) is not int
+            or not 1 <= window_days <= 60 or not 1 <= min_inflow_days <= window_days):
+        raise ValueError("统计天数须为1～60个交易日，至少流入天数须为1～统计天数的整数")
+    return window_days, min_inflow_days
+
+
+def flow_report_with_rule(report, window_days=10, min_inflow_days=6):
+    """Keep legacy daily snapshots useful, but never reuse a different screen."""
+    validate_flow_rule(window_days, min_inflow_days)
+    result = dict(report)
+    if (report.get("window_days", 10), report.get("min_inflow_days", 6)) != (window_days, min_inflow_days):
+        result.update(inflow_days_rank=[], window_complete=False, window_dates=[], partial=True)
+        result["history_coverage"] = {**report.get("history_coverage", {}), "complete_boards": 0,
+                                      "window_days": 0, "expected_window_dates": [], "incomplete_samples": []}
+        result["warnings"] = [f"旧显示缓存不是{window_days}天内至少{min_inflow_days}天的筛选结果；需逐日档案重新计算，未沿用旧筛选榜。"]
+    result.update(window_days=window_days, min_inflow_days=min_inflow_days)
+    return result
+
+
 def fetch_sector_capital_flow_report(
     sector_type: str,
     limit: int,
@@ -435,11 +454,14 @@ def fetch_sector_capital_flow_report(
     retry_missing: bool = False,
     local_only: bool = False,
     daily_only: bool = False,
+    window_days: int = 10,
+    min_inflow_days: int = 6,
     query_seconds: float = _FLOW_QUERY_SECONDS,
     progress: Any = None,
     cancel: Any = None,
 ) -> dict[str, Any]:
-    """Return a historical daily flow ranking and the 10-day inflow screen."""
+    """Return a daily ranking and a configurable, complete-trading-day screen."""
+    validate_flow_rule(window_days, min_inflow_days)
 
     try:
         target_day = date.fromisoformat(str(requested_date or shanghai_now().date().isoformat()))
@@ -458,13 +480,13 @@ def fetch_sector_capital_flow_report(
         share_current_flow_with_history(current, database)
     # Read history before contacting the provider; existing rows are useful even
     # when no full report snapshot was saved by an older application version.
-    cached_rows = database.get_sector_capital_flow_history(sector_type, cutoff)
+    cached_rows = database.get_sector_capital_flow_history(sector_type, cutoff, window_days)
     boards = database.get_sector_capital_flow_catalog(sector_type)
     saved = database.get_sector_capital_flow_report(sector_type, cutoff)
     warnings: list[str] = []
     if cutoff != target_day.isoformat():
         reason = "当天尚未收盘" if target_day == shanghai_now().date() and calendar_confirmed else "休市日"
-        warnings.append(f"所选 {target_day.isoformat()} 为{reason}，收盘历史截至 {cutoff}；今日盘中数据不参与10日收盘统计。")
+        warnings.append(f"所选 {target_day.isoformat()} 为{reason}，收盘历史截至 {cutoff}；今日盘中数据不参与{window_days}日收盘统计。")
     if not calendar_confirmed:
         warnings.append("该年份的休市日历尚未确认；只展示已取得的实际日期，不把工作日直接当作交易日。")
     catalog_cached = True
@@ -494,10 +516,10 @@ def fetch_sector_capital_flow_report(
     sector_codes = {str(board["sector_code"]) for board in boards}
 
     def read_window():
-        rows = [row for row in database.get_sector_capital_flow_history(sector_type, cutoff)
+        rows = [row for row in database.get_sector_capital_flow_history(sector_type, cutoff, window_days)
                 if str(row["sector_code"]) in sector_codes]
-        dates = sorted({str(row["trade_date"]) for row in rows if row.get("main_net_inflow") is not None})[-_FLOW_WINDOW_DAYS:]
-        expected = trading_window(resolved_day)
+        dates = sorted({str(row["trade_date"]) for row in rows if row.get("main_net_inflow") is not None})[-window_days:]
+        expected = trading_window(resolved_day, window_days)
         if expected:
             dates = [day for day in dates if day in expected]
         available: dict[str, set[str]] = {}
@@ -525,7 +547,7 @@ def fetch_sector_capital_flow_report(
 
     def needs_download(board):
         code = str(board["sector_code"])
-        complete = len(window_dates) == _FLOW_WINDOW_DAYS and trading_window(date.fromisoformat(window_dates[-1])) == window_dates and set(window_dates).issubset(cached_dates.get(code, set()))
+        complete = len(window_dates) == window_days and trading_window(date.fromisoformat(window_dates[-1]), window_days) == window_dates and set(window_dates).issubset(cached_dates.get(code, set()))
         return code not in attempted and (refresh or not date_confirmed or not complete)
 
     has_target_daily = cutoff in window_dates
@@ -600,7 +622,7 @@ def fetch_sector_capital_flow_report(
         )
     actual_date = window_dates[-1]
     date_confirmed = calendar_confirmed and actual_date == cutoff
-    expected_window = trading_window(resolved_day)
+    expected_window = trading_window(resolved_day, window_days)
     window_complete = expected_window is not None and window_dates == expected_window
     if stopped_reason:
         warnings.append(stopped_reason)
@@ -609,7 +631,7 @@ def fetch_sector_capital_flow_report(
     if not date_confirmed:
         warnings.append(f"未能联网确认所选日期的数据，正在显示本地截至 {actual_date} 的历史记录，不能视为已更新到 {cutoff}。")
     if not window_complete:
-        warnings.append(f"只有 {len(window_dates)} 个可用交易日：当日榜可查看，10日资金流入榜暂不能完整计算。")
+        warnings.append(f"只有 {len(window_dates)} 个可用交易日：当日榜可查看，{window_days}日资金流入榜暂不能完整计算。")
 
     rows_by_code: dict[str, dict[str, dict[str, Any]]] = {}
     for row in cached_rows:
@@ -630,17 +652,19 @@ def fetch_sector_capital_flow_report(
         row_map = rows_by_code.get(code, {})
         values = [row_map.get(day) for day in window_dates]
         known = [row for row in values if row is not None and row.get("main_net_inflow") is not None]
-        if window_complete and len(known) == _FLOW_WINDOW_DAYS:
+        if window_complete and len(known) == window_days:
             complete_count += 1
         positive_days = sum(1 for row in known if float(row["main_net_inflow"]) > 0)
-        if window_complete and len(known) == _FLOW_WINDOW_DAYS and positive_days >= 6:
+        if window_complete and len(known) == window_days and positive_days >= min_inflow_days:
             inflow_rows.append(
                 {
                     "sector_code": code,
                     "sector_name": str(board["sector_name"]),
                     "positive_flow_days": positive_days,
                     "available_days": len(known),
+                    # Legacy response alias; new clients use the generic key.
                     "ten_day_main_net_inflow": sum(float(row["main_net_inflow"]) for row in known),
+                    "window_main_net_inflow": sum(float(row["main_net_inflow"]) for row in known),
                     "latest_main_net_inflow": float(row_map[actual_date]["main_net_inflow"]),
                     "flow_sequence": [float(row["main_net_inflow"]) for row in values],
                 }
@@ -657,7 +681,7 @@ def fetch_sector_capital_flow_report(
 
     incomplete_boards = len(boards) - complete_count
     if incomplete_boards:
-        warnings.append(f"{incomplete_boards} 个板块的10日数据不完整，已排除出10日资金流入榜；缺失数据不计为零。")
+        warnings.append(f"{incomplete_boards} 个板块的{window_days}日数据不完整，已排除出{window_days}日资金流入榜；缺失数据不计为零。")
 
     report = {
         "ok": True,
@@ -666,6 +690,8 @@ def fetch_sector_capital_flow_report(
         "resolved_date": cutoff,
         "report_date": actual_date,
         "window_dates": window_dates,
+        "window_days": window_days,
+        "min_inflow_days": min_inflow_days,
         "total": len(daily_rows),
         "updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "source": "东方财富已保存单日资金流向（含当前收盘归档）",
@@ -689,8 +715,8 @@ def fetch_sector_capital_flow_report(
         "refresh_error": "本次联网刷新未取得所查询交易日的新资金流向，继续展示已有记录。" if (refresh or retry_missing) and downloaded_boards == 0 and fresh_daily_date != cutoff and (not date_confirmed or incomplete_boards) else "",
         "history_coverage": {
             "incomplete_samples": [{"sector_code":str(board["sector_code"]),"sector_name":str(board["sector_name"]),
-                "available_days":sum(1 for day in (expected_window or []) if rows_by_code.get(str(board["sector_code"]),{}).get(day,{}).get("main_net_inflow") is not None),"expected_days":10}
-                for board in boards if sum(1 for day in (expected_window or []) if rows_by_code.get(str(board["sector_code"]),{}).get(day,{}).get("main_net_inflow") is not None)<10][:10],
+                "available_days":sum(1 for day in (expected_window or []) if rows_by_code.get(str(board["sector_code"]),{}).get(day,{}).get("main_net_inflow") is not None),"expected_days":window_days}
+                for board in boards if sum(1 for day in (expected_window or []) if rows_by_code.get(str(board["sector_code"]),{}).get(day,{}).get("main_net_inflow") is not None)<window_days][:10],
             "requested_boards": len(boards),
             "complete_boards": complete_count,
             "failed_boards": len(failures),

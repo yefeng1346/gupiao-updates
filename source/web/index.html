@@ -479,14 +479,20 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
         <span id="currentFlowStatus" class="muted" aria-live="polite"></span>
       </div>
       <div id="currentFlowTable"></div>
-      <h3>历史日期查询与10日资金流入榜</h3>
-      <p class="muted">点击“一键更新资金数据”，刷新当天完整榜单、保存可确认的收盘数据并计算本地10日榜，不等待历史接口。最近10个交易日必须逐日完整；缺失不算零，也不拿更早日期凑数。集中历史库未启用前，漏开软件的日期仍需可用历史渠道补齐。历史接口仅作为高级补缺渠道。</p>
+      <h3>历史日期查询与多日资金流入榜</h3>
+      <p class="muted">点击“一键更新资金数据”，刷新当天完整榜单、保存可确认的收盘数据并计算本地筛选榜，不等待历史接口。可设置1～60个交易日内至少多少天主力净流入大于0；所选区间必须逐日完整。调整条件只重新计算本地数据，缺失不算零，也不拿更早日期凑数。集中历史库未启用前，漏开软件的日期仍需可用历史渠道补齐。</p>
       <div class="capital-flow-controls">
         <label>查询日期（休市回看）
           <input id="capitalFlowDate" type="date" />
         </label>
         <label>显示数量
           <select id="capitalFlowLimit"><option value="20">前 20</option><option value="50" selected>前 50</option><option value="100">前 100</option><option value="1000">全部</option></select>
+        </label>
+        <label>统计天数（交易日）
+          <input id="capitalFlowWindowDays" type="number" min="1" max="60" step="1" value="10" aria-label="统计天数（交易日）" />
+        </label>
+        <label>至少资金流入天数
+          <input id="capitalFlowMinInflowDays" type="number" min="1" max="10" step="1" value="6" aria-label="至少资金流入天数" />
         </label>
         <button id="refreshCapitalFlowBtn" class="secondary" type="button">查看已保存数据</button>
         <button id="refreshCapitalFlowOnlineBtn" class="primary" type="button">一键更新资金数据</button>
@@ -495,7 +501,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
         <span id="capitalFlowStatus" class="capital-flow-status muted" aria-live="polite">选择日期后点击“查询资金流向”。</span>
       </div>
       <details id="flowAdvancedPanel">
-        <summary>高级：历史补缺、来源文件、删除历史档案</summary>
+        <summary><strong>高级：历史补缺、来源文件、删除历史档案</strong></summary>
         <p class="muted">同花顺联网测试尚未通过，通达信普通日线不含主力资金。下面两个文件来源并非联网备用源；来源分别保存、统计，不与东方财富混用。删除档案前自动备份，与清理显示缓存不同。</p>
         <label>历史资金数据来源<select id="capitalFlowSource" aria-label="历史资金数据来源"><option value="eastmoney">东方财富（联网 / 本地）</option><option value="tdx_import">通达信（高级文件导入）</option><option value="ths_import">同花顺（高级文件导入）</option></select></label>
         <button id="flowHistoryBackfillBtn" class="secondary" type="button">尝试历史接口补缺（可能失败）</button>
@@ -560,7 +566,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
     <section class="card">
       <h2>7. 最近10天至少有6天名次前进榜</h2>
       <p class="muted">取最近10个可用交易日，比较9个相邻区间；要求排名严格前进不少于6天。缺失数据的区间不计入前进天数，窗口首日或报告日缺少排名的板块不入榜。点击任意数据行可固定高亮，再点一次取消；点击其他行会切换高亮。</p>
-      <p id="tenDayLeaderStatus" class="muted">领涨股按板块成分股最新涨跌幅；数据通过公开行情接口补充。</p>
+      <p id="tenDayLeaderStatus" class="muted">5日资金净流入：截至报告日期最近5个交易日的东方财富板块主力净流入合计；不足5天不显示部分合计。</p>
       <div id="tenDaySixUp"></div>
     </section>
 
@@ -1454,11 +1460,10 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
         {key:"rank_change_10d_label",label:"累计名次变化",render:(v,r)=>label(r,"rank_change_10d_label")},
         {key:"rank_path_10d",label:"10日名次轨迹",render:v=>esc(v || "-")},
         {key:"rps_change_10d",label:"RPS变化",render:fmt}, {key:"return_10d",label:"10日涨幅",render:pct}, {key:"rank",label:"现排名",render:v=>esc(v)},
-        {key:"leading_stock",label:"领涨股",render:(_,r)=>leaderStockCell(r,"leading_stock")}
+        {key:"five_day_main_net_inflow",label:"5日资金净流入",render:(_,r)=>fiveDayFlowCell(r)}
       ];
       if (tenDayRows.length) {
         $("tenDaySixUp").innerHTML = miniTable(tenDayRows, tenDayFields);
-        void loadSectorLeaders(report, tenDayRows, "tenDaySixUp", "tenDayLeaderStatus");
       } else {
         sectorLeaderRequestSerial.tenDaySixUp++;
         const requiredDays = Number(tenDayModule.required_days || 10);
@@ -1469,6 +1474,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
           : `最近10个交易日没有板块达到至少${minAdvanceDays}天名次前进。`;
         $("tenDaySixUp").innerHTML = `<span class="muted">${esc(emptyHint)}</span>`;
       }
+      $("tenDayLeaderStatus").textContent = fiveDayFlowStatus(tenDayModule);
       renderGroups(report);
       renderTrend(report);
       renderStrategy(report);
@@ -1505,6 +1511,25 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
       const cls = number > 0 ? "flow-in" : number < 0 ? "flow-out" : "flow-flat";
       const prefix = number > 0 ? "+" : "";
       return `<span class="${cls}">${prefix}${number.toFixed(2)}%</span>`;
+    }
+
+    function fiveDayFlowCell(row) {
+      const reference = row.five_day_flow_match === "unique_name" ? "东方财富同名板块参考；成分范围可能不同。" : "东方财富板块主力资金。";
+      const title = `${reference}代码 ${row.five_day_flow_code || "未匹配"}；截至报告日期最近5个交易日合计。`;
+      if (row.five_day_flow_status === "complete" && row.five_day_main_net_inflow != null) {
+        return `<span title="${esc(title)}">${flowAmount(row.five_day_main_net_inflow)}</span>`;
+      }
+      const reason = row.five_day_flow_status === "unmatched" ? "未匹配"
+        : row.five_day_flow_status === "not_closed" ? "尚未收盘"
+        : row.five_day_flow_status === "calendar_unknown" ? "交易日未确认"
+        : `数据不足（${Number(row.five_day_flow_available_days) || 0}/5天）`;
+      return `<span class="muted" title="${esc(title)}">${esc(reason)}</span>`;
+    }
+
+    function fiveDayFlowStatus(module) {
+      const meta = module.five_day_flow || {};
+      const days = meta.window_dates || [];
+      return `5日资金净流入：东方财富主力净流入合计；${days.length ? `${days[0]} 至 ${days[days.length-1]}；` : ""}完整覆盖 ${meta.complete_boards || 0}/${meta.total_boards ?? (module.rows || []).length} 个板块。仅读取本地收盘档案，更新资金数据后重新读取报告。非东方财富板块为唯一同名参考，成分范围可能不同；未匹配或不足5天不显示部分合计。`;
     }
 
     function localDateInputValue() {
@@ -1564,6 +1589,8 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
     }
 
     function renderCapitalFlowPanel(data) {
+      const windowDays = Number(data.window_days) || 10;
+      const minInflowDays = Number(data.min_inflow_days) || 6;
       const rows = Array.isArray(data?.rows) ? data.rows : [];
       const inflowRows = Array.isArray(data?.inflow_days_rank) ? data.inflow_days_rank : [];
       const dailyBody = rows.map(row => `<tr>
@@ -1580,8 +1607,8 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
       const inflowBody = inflowRows.map(row => `<tr>
         <td>${esc(row.rank ?? "-")}</td>
         <td><b>${esc(row.sector_name || "-")}</b><small class="muted">${esc(row.sector_code || "")}</small></td>
-        <td><b>${esc(row.positive_flow_days)}/10 天</b></td>
-        <td>${flowAmount(row.ten_day_main_net_inflow)}</td>
+        <td><b>${esc(row.positive_flow_days)}/${esc(windowDays)} 天</b></td>
+        <td>${flowAmount(row.window_main_net_inflow ?? row.ten_day_main_net_inflow)}</td>
         <td>${flowAmount(row.latest_main_net_inflow)}</td>
       </tr>`).join("");
       const coverage = data.history_coverage || {};
@@ -1589,21 +1616,21 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
       const lastDate = data.window_dates?.[data.window_dates.length - 1] || data.report_date || "—";
       const emptyDaily = `<tr><td colspan="9" class="muted">所选日期没有可用的板块资金流向。</td></tr>`;
       const imported = ["tdx_import", "ths_import"].includes(data.source_id);
-      const incomplete = data.window_complete === false || (!imported && data.catalog_complete === false) || Number(coverage.complete_boards || 0) < Number(coverage.requested_boards || 0) || Number(coverage.window_days || 0) < 10;
-      const emptyInflow = `<tr><td colspan="5" class="muted">${imported ? "此来源已导入范围内：" : ""}${incomplete ? "10日数据尚未完整，暂不能判断是否有板块符合条件；请补齐缺失数据。" : "10日数据完整，暂无符合“至少6天主力资金净流入”的板块。"}</td></tr>`;
+      const incomplete = data.window_complete === false || (!imported && data.catalog_complete === false) || Number(coverage.complete_boards || 0) < Number(coverage.requested_boards || 0) || Number(coverage.window_days || 0) < windowDays;
+      const emptyInflow = `<tr><td colspan="5" class="muted">${imported ? "此来源已导入范围内：" : ""}${incomplete ? `${windowDays}日数据尚未完整，暂不能判断是否有板块符合条件；请补齐缺失数据。` : `${windowDays}日数据完整，暂无符合“至少${minInflowDays}天主力资金净流入”的板块。`}</td></tr>`;
       const warnings = Array.isArray(data.warnings) ? data.warnings : [];
       const warningHtml = warnings.length ? `<p class="notice" role="status">${warnings.map(esc).join("<br>")}</p>` : "";
       const preview = data.preview;
       const previewHtml = preview ? `<div class="capital-flow-rank-card"><h4>${esc(preview.date)} 今日盘中预览（非收盘）</h4><p>${esc(preview.note)} 更新时间 ${esc(preview.updated_at || "未知")}；共 ${esc(preview.total)} 个板块。</p><div class="capital-flow-table"><table><thead><tr><th>板块</th><th>主力净流入</th><th>涨跌幅</th></tr></thead><tbody>${(preview.rows || []).map(row => `<tr><td>${esc(row.sector_name)} ${esc(row.sector_code)}</td><td>${flowAmount(row.main_net_inflow)}</td><td>${quoteChange(row.pct_change, "%")}</td></tr>`).join("")}</tbody></table></div></div>` : "";
       return `<section class="capital-flow-panel">
         <h3>${esc(typeLabel(data.sector_type))}｜收盘历史实际交易日 ${esc(data.report_date || "暂无")}｜${esc(data.source || "东方财富")}</h3>
-        <p class="capital-flow-panel-meta">所选日期 ${esc(data.requested_date || "—")}；查询交易日 ${esc(data.resolved_date || data.requested_date || "—")}；单日覆盖 ${esc(coverage.daily_boards ?? rows.length)}/${esc(coverage.requested_boards ?? rows.length)} 个板块${data.daily_complete ? "（单日数据完整）" : "（仅展示实际取得的数据）"}。10日历史区间 ${esc(firstDate)} 至 ${esc(lastDate)}；10日完整覆盖 ${esc(coverage.complete_boards ?? 0)}/${esc(coverage.requested_boards ?? 0)} 个板块${incomplete ? "（10日数据未完整）" : ""}；本次历史读取失败 ${esc(coverage.failed_boards ?? 0)} 个。</p>
+        <p class="capital-flow-panel-meta">所选日期 ${esc(data.requested_date || "—")}；查询交易日 ${esc(data.resolved_date || data.requested_date || "—")}；单日覆盖 ${esc(coverage.daily_boards ?? rows.length)}/${esc(coverage.requested_boards ?? rows.length)} 个板块${data.daily_complete ? "（单日数据完整）" : "（仅展示实际取得的数据）"}。${esc(windowDays)}日历史区间 ${esc(firstDate)} 至 ${esc(lastDate)}；${esc(windowDays)}日完整覆盖 ${esc(coverage.complete_boards ?? 0)}/${esc(coverage.requested_boards ?? 0)} 个板块${incomplete ? `（${windowDays}日数据未完整）` : ""}；本次历史读取失败 ${esc(coverage.failed_boards ?? 0)} 个。</p>
         ${warningHtml}
-        ${(coverage.incomplete_samples || []).length ? `<p class="muted">数据不足示例：${coverage.incomplete_samples.map(row => `${esc(row.sector_name)} ${esc(row.available_days)}/10天`).join("；")}（仅列部分，不参加10日筛选）</p>` : ""}
+        ${(coverage.incomplete_samples || []).length ? `<p class="muted">数据不足示例：${coverage.incomplete_samples.map(row => `${esc(row.sector_name)} ${esc(row.available_days)}/${esc(row.expected_days || windowDays)}天`).join("；")}（仅列部分，不参加${esc(windowDays)}日筛选）</p>` : ""}
         ${previewHtml}
         <div class="capital-flow-rank-grid">
           <div class="capital-flow-rank-card"><h4>当日主力净流入榜</h4><p>仅对实际取得数据的板块排序；缺失板块不作为零流入参与排名。</p><div class="capital-flow-table"><table><thead><tr><th>排名</th><th>板块</th><th>涨跌幅</th><th>主力净流入</th><th>主力净占比</th><th>超大单</th><th>大单</th><th>中单</th><th>小单</th></tr></thead><tbody>${dailyBody || emptyDaily}</tbody></table></div></div>
-          <div class="capital-flow-rank-card"><h4>最近10天至少6天资金流入榜</h4><p>仅纳入10个交易日数据完整且主力净流入至少6天的板块，按流入天数及10日累计净额排序。</p><div class="capital-flow-table"><table><thead><tr><th>排名</th><th>板块</th><th>流入天数</th><th>10日主力净额</th><th>所选日净额</th></tr></thead><tbody>${inflowBody || emptyInflow}</tbody></table></div></div>
+          <div class="capital-flow-rank-card"><h4>${esc(windowDays)}天内至少${esc(minInflowDays)}天资金流入榜</h4><p>仅纳入${esc(windowDays)}个交易日数据完整且主力净流入大于0至少${esc(minInflowDays)}天的板块，按流入天数及${esc(windowDays)}日累计净额排序。</p><div class="capital-flow-table"><table><thead><tr><th>排名</th><th>板块</th><th>流入天数</th><th>${esc(windowDays)}日主力净额</th><th>所选日净额</th></tr></thead><tbody>${inflowBody || emptyInflow}</tbody></table></div></div>
         </div>
       </section>`;
     }
@@ -1639,6 +1666,52 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
       return $("capitalFlowSource")?.value || "eastmoney";
     }
 
+    function selectedFlowRule() {
+      const window_days = Number($("capitalFlowWindowDays")?.value ?? 10);
+      const min_inflow_days = Number($("capitalFlowMinInflowDays")?.value ?? 6);
+      if (!Number.isInteger(window_days) || !Number.isInteger(min_inflow_days) || window_days < 1 || window_days > 60 || min_inflow_days < 1 || min_inflow_days > window_days) {
+        throw new Error("统计天数须为1～60个交易日，至少流入天数须为1～统计天数的整数");
+      }
+      return {window_days, min_inflow_days};
+    }
+
+    function flowRuleQuery() {
+      return `&${new URLSearchParams(selectedFlowRule())}`;
+    }
+
+    function initializeFlowRule() {
+      let rule = {window_days:10, min_inflow_days:6};
+      try {
+        const saved = JSON.parse(localStorage.getItem("gupiao.capitalFlowRule"));
+        if (saved && Number.isInteger(saved.window_days) && Number.isInteger(saved.min_inflow_days) && saved.window_days >= 1 && saved.window_days <= 60 && saved.min_inflow_days >= 1 && saved.min_inflow_days <= saved.window_days) rule = saved;
+      } catch (_) { /* Corrupt preferences must not prevent startup. */ }
+      $("capitalFlowWindowDays").value = rule.window_days;
+      $("capitalFlowMinInflowDays").value = rule.min_inflow_days;
+      $("capitalFlowMinInflowDays").max = rule.window_days;
+    }
+
+    async function changeFlowRule(event) {
+      if (flowUiBusy) return;
+      // Reject pending responses before validating, including invalid new input.
+      flowRestoreGeneration++;
+      try {
+        const days = Number($("capitalFlowWindowDays").value);
+        if (event?.target?.id === "capitalFlowWindowDays" && Number.isInteger(days) && days >= 1 && days <= 60) {
+          $("capitalFlowMinInflowDays").max = days;
+          if (Number($("capitalFlowMinInflowDays").value) > days) $("capitalFlowMinInflowDays").value = days;
+        }
+        const rule = selectedFlowRule();
+        localStorage.setItem("gupiao.capitalFlowRule", JSON.stringify(rule));
+        localStorage.setItem(flowDateStorageKey(), $("capitalFlowDate").value);
+        $("capitalFlowTable").innerHTML = "";
+        $("capitalFlowStatus").textContent = "正在按新条件计算本地档案（不联网）…";
+        await restoreCapitalFlow();
+      } catch (error) {
+        $("capitalFlowTable").innerHTML = "";
+        $("capitalFlowStatus").textContent = error.message;
+      }
+    }
+
     function flowDateStorageKey() {
       return selectedFlowSource() === "eastmoney" ? "gupiao.capitalFlowDate" : `gupiao.capitalFlowDate.${selectedFlowSource()}`;
     }
@@ -1655,7 +1728,9 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
     let activeFlowJobs = [];
     let flowUiBusy = false;
     let flowCancelRequested = false;
+    let flowRestoreGeneration = 0;
     async function downloadFlowHistory(selectedDate, limit, resumeJobs=null, mode="daily") {
+      const rule = selectedFlowRule();
       $("cancelFlowHistoryBtn").hidden = false;
       $("cancelFlowHistoryBtn").disabled = true;
       const outcomes = await Promise.all(selectedSectorTypes().map(async type => {
@@ -1664,15 +1739,16 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
           if (resumeJobs && !existing) return null;
           let job = existing
             ? await api(`/api/sector-capital-flow/history/jobs/${encodeURIComponent(existing.id)}`)
-            : await api("/api/sector-capital-flow/history/jobs", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({sector_type:type, date:selectedDate, mode})});
+            : await api("/api/sector-capital-flow/history/jobs", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({sector_type:type, date:selectedDate, mode, ...rule})});
           activeFlowJobs.push(job.id);
           if (flowCancelRequested) await api(`/api/sector-capital-flow/history/jobs/${encodeURIComponent(job.id)}/cancel`, {method:"POST"});
           else $("cancelFlowHistoryBtn").disabled = false;
           let shownStage = "";
+          const matchesRule = () => Number(job.window_days ?? 10) === rule.window_days && Number(job.min_inflow_days ?? 6) === rule.min_inflow_days;
           while (["running","paused"].includes(job.status)) {
             await new Promise(resolve => setTimeout(resolve, 1500));
             job = await api(`/api/sector-capital-flow/history/jobs/${encodeURIComponent(job.id)}`);
-            if (job.result && shownStage !== "history") {
+            if (job.result && matchesRule() && shownStage !== "history") {
               renderCapitalFlowOutcomes([{type, data:{...job.result, rows:(job.result.rows || []).slice(0,limit), inflow_days_rank:(job.result.inflow_days_rank || []).slice(0,limit)}}], "已取得的数据先展示，后台仍在更新");
               shownStage = "history";
             }
@@ -1685,11 +1761,14 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
               : job.stage === "current"
               ? `正在联网更新${typeLabel(type)}当前资金数据，请稍候…`
               : job.stage === "sync"
-              ? `${typeLabel(type)}当天榜已保存，正在同步已配置历史库并计算本地10日榜…`
+              ? `${typeLabel(type)}当天榜已保存，正在同步已配置历史库并计算本地筛选榜…`
               : `正在自动更新${typeLabel(type)}（第${job.round || 1}/${job.max_rounds || 3}轮），收盘截至 ${job.cutoff || "正在确认"}：本轮尝试 ${job.attempted}/${job.total || "?"}，成功 ${job.downloaded}，失败 ${job.failed}；通道 ${channel}。${job.current_updated ? `当前 ${job.current_total} 个板块已更新；` : ""}成功记录已保存，无需再次点击。`;
           }
           if (!job.result) throw new Error(job.message || "未取得可显示的历史数据");
-          const data = {...job.result, rows:(job.result.rows || []).slice(0,limit), inflow_days_rank:(job.result.inflow_days_rank || []).slice(0,limit)};
+          // Recovered old jobs retain their original rule. Recompute locally if
+          // the user's saved preference changed while that job was paused.
+          const result = matchesRule() ? job.result : await api(`/api/sector-capital-flow/cache?sector_type=${encodeURIComponent(type)}&source=eastmoney&limit=${limit}&date=${encodeURIComponent(selectedDate)}&${new URLSearchParams(rule)}`);
+          const data = {...result, rows:(result.rows || []).slice(0,limit), inflow_days_rank:(result.inflow_days_rank || []).slice(0,limit)};
           if (["failed","cancelled","partial"].includes(job.status)) {
             data.partial = true;
             data.warnings = [...(data.warnings || []), job.message || "任务未完成，仍展示已保存记录"];
@@ -1727,11 +1806,12 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
       const table = $("capitalFlowTable");
       if (!button || !status || !table) return;
       flowUiBusy = true;
+      flowRestoreGeneration++;
       flowCancelRequested = false;
       $("refreshCapitalFlowBtn").disabled = true;
       $("refreshCapitalFlowOnlineBtn").disabled = true;
       $("retryCapitalFlowBtn").disabled = true;
-      for (const id of ["capitalFlowSource", "capitalFlowDate", "capitalFlowLimit", "flowImportBtn"]) if ($(id)) $(id).disabled = true;
+      for (const id of ["capitalFlowSource", "capitalFlowDate", "capitalFlowLimit", "capitalFlowWindowDays", "capitalFlowMinInflowDays", "flowImportBtn"]) if ($(id)) $(id).disabled = true;
       status.textContent = retryMissing
         ? "正在低并发补齐缺失板块；已保存的数据不会重新下载。取得的数据将逐个保存…"
         : forceRefresh
@@ -1739,6 +1819,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
         : "正在读取所选日期的本地结果…";
       try {
         const limit = Math.max(1, Number($("capitalFlowLimit").value) || 50);
+        const ruleQuery = flowRuleQuery();
         const selectedDate = $("capitalFlowDate").value;
         const source = selectedFlowSource();
         if ((retryMissing || forceRefresh) && source === "eastmoney") {
@@ -1749,7 +1830,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
         const outcomes = await Promise.all(selectedSectorTypes().map(async type => {
           try {
             const refresh = retryMissing ? "&retry_missing=true" : forceRefresh ? "&refresh=true" : "";
-            return {type, data: await api(`/api/sector-capital-flow?sector_type=${encodeURIComponent(type)}&source=${source}&limit=${limit}&date=${encodeURIComponent(selectedDate)}${source === "eastmoney" ? refresh : ""}`)};
+            return {type, data: await api(`/api/sector-capital-flow?sector_type=${encodeURIComponent(type)}&source=${source}&limit=${limit}&date=${encodeURIComponent(selectedDate)}${ruleQuery}${source === "eastmoney" ? refresh : ""}`)};
           } catch (error) {
             return {type, error};
           }
@@ -1765,11 +1846,19 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
         activeFlowJobs = [];
         flowUiBusy = false;
         if ($("cancelFlowHistoryBtn")) $("cancelFlowHistoryBtn").hidden = true;
-        for (const id of ["capitalFlowSource", "capitalFlowDate", "capitalFlowLimit", "flowImportBtn"]) if ($(id)) $(id).disabled = false;
+        for (const id of ["capitalFlowSource", "capitalFlowDate", "capitalFlowLimit", "capitalFlowWindowDays", "capitalFlowMinInflowDays", "flowImportBtn"]) if ($(id)) $(id).disabled = false;
       }
     }
 
     async function restoreCapitalFlow() {
+      const generation = ++flowRestoreGeneration;
+      let ruleQuery;
+      try { ruleQuery = flowRuleQuery(); }
+      catch (error) {
+        $("capitalFlowTable").innerHTML = "";
+        $("capitalFlowStatus").textContent = error.message;
+        return;
+      }
       const limit = Math.max(1, Number($("capitalFlowLimit").value) || 50);
       const today = localDateInputValue();
       const savedDate = localStorage.getItem(flowDateStorageKey());
@@ -1777,7 +1866,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
       if (preferredDate) $("capitalFlowDate").value = preferredDate;
       const readCache = async (type, requestedDate) => {
         const dateParam = requestedDate ? `&date=${encodeURIComponent(requestedDate)}` : "";
-        return api(`/api/sector-capital-flow/cache?sector_type=${encodeURIComponent(type)}&source=${selectedFlowSource()}&limit=${limit}${dateParam}`);
+        return api(`/api/sector-capital-flow/cache?sector_type=${encodeURIComponent(type)}&source=${selectedFlowSource()}&limit=${limit}${dateParam}${ruleQuery}`);
       };
       let outcomes = await Promise.all(selectedSectorTypes().map(async type => {
         try {
@@ -1786,6 +1875,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
           return {type, error};
         }
       }));
+      if (generation !== flowRestoreGeneration) return;
       if (preferredDate && outcomes.every(item => item.error)) {
         outcomes = await Promise.all(selectedSectorTypes().map(async type => {
           try {
@@ -1795,6 +1885,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
           }
         }));
       }
+      if (generation !== flowRestoreGeneration) return;
       const loaded = renderCapitalFlowOutcomes(outcomes, "已恢复本机保存结果");
       if (loaded) {
         const restoredDate = outcomes.find(item => item.data)?.data.requested_date;
@@ -2051,7 +2142,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
           <section class="dual-source-panel-section"><h4>最近5日走弱 TOP 榜</h4><div id="${prefix}-fiveDown"></div></section>
         </div>
         <section class="dual-source-panel-section"><h4>百名内最近5日强势前进 TOP 榜</h4><p id="${prefix}-fiveTop100LeaderStatus" class="muted">领涨股按板块成分股最新涨跌幅。</p><div id="${prefix}-fiveTop100Up"></div></section>
-        <section class="dual-source-panel-section"><h4>最近10天至少有6天名次前进榜</h4><p id="${prefix}-tenDayLeaderStatus" class="muted">领涨股按板块成分股最新涨跌幅。</p><div id="${prefix}-tenDaySixUp"></div></section>
+        <section class="dual-source-panel-section"><h4>最近10天至少有6天名次前进榜</h4><p id="${prefix}-tenDayLeaderStatus" class="muted">5日资金净流入：东方财富板块主力净流入合计。</p><div id="${prefix}-tenDaySixUp"></div></section>
         <details open><summary>趋势与策略</summary><div id="${prefix}-groups"></div><div id="${prefix}-trend"></div><div id="${prefix}-strategy"></div></details>
       </article>`;
     }
@@ -2188,11 +2279,10 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
         {key:"rank_change_10d_label",label:"累计名次变化",render:(v,r)=>label(r,"rank_change_10d_label")},
         {key:"rank_path_10d",label:"10日名次轨迹",render:v=>esc(v || "-")},
         {key:"rps_change_10d",label:"RPS变化",render:fmt}, {key:"return_10d",label:"10日涨幅",render:pct}, {key:"rank",label:"现排名",render:v=>esc(v)},
-        {key:"leading_stock",label:"领涨股",render:(_,r)=>leaderStockCell(r,"leading_stock")}
+        {key:"five_day_main_net_inflow",label:"5日资金净流入",render:(_,r)=>fiveDayFlowCell(r)}
       ];
       if (tenRows.length) {
         $(`dual-${panelKey}-tenDaySixUp`).innerHTML = miniTable(tenRows, tenFields);
-        void loadDualSectorLeaders(panelKey, report, tenRows, `dual-${panelKey}-tenDaySixUp`, `dual-${panelKey}-tenDayLeaderStatus`);
       } else {
         dualSectorLeaderRequestSerial[panelKey].tenDaySixUp++;
         const requiredDays = Number(tenModule.required_days || 10);
@@ -2201,6 +2291,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
         const hint = availableDays < requiredDays ? `数据不足：当前只有 ${availableDays} 个可用交易日，需要 ${requiredDays} 个交易日。` : `最近10个交易日没有板块达到至少${minAdvanceDays}天名次前进。`;
         $(`dual-${panelKey}-tenDaySixUp`).innerHTML = `<span class="muted">${esc(hint)}</span>`;
       }
+      $(`dual-${panelKey}-tenDayLeaderStatus`).textContent = fiveDayFlowStatus(tenModule);
       dualRenderGroups(report, `dual-${panelKey}-groups`);
       dualRenderTrend(report, `dual-${panelKey}-trend`);
       dualRenderStrategy(report, `dual-${panelKey}-strategy`);
@@ -2428,6 +2519,9 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
     $("refreshCapitalFlowOnlineBtn").onclick = () => refreshCapitalFlow(true);
     $("retryCapitalFlowBtn").onclick = () => refreshCapitalFlow(false, true);
     $("capitalFlowLimit").onchange = restoreCapitalFlow;
+    initializeFlowRule();
+    $("capitalFlowWindowDays").onchange = changeFlowRule;
+    $("capitalFlowMinInflowDays").onchange = changeFlowRule;
     $("capitalFlowSource").value = localStorage.getItem("gupiao.capitalFlowSource") || "eastmoney";
     if (!$("capitalFlowSource").value) $("capitalFlowSource").value = "eastmoney";
     updateFlowSourceControls();
@@ -2684,7 +2778,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
         $("historyConstituentTable").innerHTML = "";
         $("historyConstituentStatus").textContent = "点击板块名称查看成分股和 ETF。";
         $("fiveTop100LeaderStatus").textContent = "领涨股按板块成分股最新涨跌幅；数据通过公开行情接口补充。";
-        $("tenDayLeaderStatus").textContent = "领涨股按板块成分股最新涨跌幅；数据通过公开行情接口补充。";
+        $("tenDayLeaderStatus").textContent = "5日资金净流入：东方财富板块主力净流入合计；重新读取报告后按报告日期统计。";
         $("heroReportDate").textContent = "—";
         $("heroCoverage").textContent = "—";
         $("heroMarketState").textContent = "—";

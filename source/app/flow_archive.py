@@ -13,7 +13,7 @@ import time
 from urllib.parse import urlparse
 import uuid
 
-from app.capital_flow import fetch_sector_capital_flow, share_current_flow_with_history, fetch_sector_capital_flow_report
+from app.capital_flow import fetch_sector_capital_flow, share_current_flow_with_history, fetch_sector_capital_flow_report, validate_flow_rule
 from app.flow_calendar import confirmed_close_date, latest_closed_trading_day, shanghai_now, trading_window, is_trading_day
 from app.providers.quote_fallback import _request_get, close_reused_sessions
 
@@ -79,7 +79,7 @@ def validate_daily(payload, sector_type, day):
     return clean
 
 
-def sync_feed(database, sector_type, cutoff, urls, *, cancel=None):
+def sync_feed(database, sector_type, cutoff, urls, *, cancel=None, window_days=10):
     result = {"configured":bool(urls),"saved_days":[],"errors":[]}
     if not urls: return result
     deadline = time.monotonic()+45
@@ -93,7 +93,7 @@ def sync_feed(database, sector_type, cutoff, urls, *, cancel=None):
             index = candidate; break
         except Exception as exc: result["errors"].append(str(exc))
     if index is None: return result
-    wanted = set(trading_window(date.fromisoformat(cutoff)) or [cutoff])
+    wanted = set(trading_window(date.fromisoformat(cutoff), window_days) or [cutoff])
     used = set()
     for entry in index["entries"]:
         if time.monotonic() >= deadline or (cancel and cancel.is_set()): break
@@ -128,8 +128,9 @@ def sync_feed(database, sector_type, cutoff, urls, *, cancel=None):
     return result
 
 
-def update_daily(database, sector_type, selected_date, *, feed_urls=(), cancel=None, progress=None):
+def update_daily(database, sector_type, selected_date, *, feed_urls=(), cancel=None, progress=None, window_days=10, min_inflow_days=6):
     """One click does bounded collection+sync, then computes purely from storage."""
+    validate_flow_rule(window_days, min_inflow_days)
     closed, _ = latest_closed_trading_day(date.fromisoformat(selected_date))
     notes = []
     current = None
@@ -138,14 +139,15 @@ def update_daily(database, sector_type, selected_date, *, feed_urls=(), cancel=N
             current = collect_current(database,sector_type)
             if progress: progress({"current_updated":True,"current_total":current.get("total",0),"stage":"sync"})
         except Exception as exc: notes.append(f"当天榜联网失败，原数据保留：{exc}")
-    feed = sync_feed(database,sector_type,closed.isoformat(),list(feed_urls),cancel=cancel)
+    feed = sync_feed(database,sector_type,closed.isoformat(),list(feed_urls),cancel=cancel,window_days=window_days)
     if feed["errors"]: notes.append("集中历史库部分下载失败，校验失败的数据未写入，继续使用本地记录。")
     try:
-        report = fetch_sector_capital_flow_report(sector_type,1000,selected_date,database,local_only=True)
+        report = fetch_sector_capital_flow_report(sector_type,1000,selected_date,database,local_only=True,
+                                                  window_days=window_days,min_inflow_days=min_inflow_days)
     except RuntimeError:
         report = {"ok":True,"sector_type":sector_type,"requested_date":selected_date,
                   "resolved_date":closed.isoformat(),"report_date":None,"rows":[],"total":0,
-                  "window_dates":[],"inflow_days_rank":[],"window_complete":False,"date_confirmed":False,
+                  "window_dates":[],"window_days":window_days,"min_inflow_days":min_inflow_days,"inflow_days_rank":[],"window_complete":False,"date_confirmed":False,
                   "daily_complete":False,"catalog_complete":False,"partial":True,"source":"东方财富本地逐日档案",
                   "history_coverage":{"requested_boards":(current or {}).get("total",0),"complete_boards":0,"window_days":0},
                   "warnings":["尚无已确认的收盘档案；当天盘中榜可正常查看。需要收盘后采集，缺失日期不会被伪造。"]}
