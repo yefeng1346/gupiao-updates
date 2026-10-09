@@ -1,0 +1,6 @@
+source/**/__pycache__/
+source/.env
+source/.venv/
+source/data/
+source/reports/
+.collector/
