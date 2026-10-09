@@ -1,0 +1,36 @@
+name: Authorized daily flow archive
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '10,45 8 * * 1-5'
+    - cron: '30 9,12 * * 1-5'
+concurrency:
+  group: daily-flow-archive
+  cancel-in-progress: false
+jobs:
+  collect:
+    # Disabled by default: public data access is not redistribution permission.
+    if: vars.FLOW_REDISTRIBUTION_AUTHORIZED == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests
+      - name: Capture closing data without loading user credentials
+        env:
+          PYTHONPATH: source
+        run: python -m tools.collect_daily_flow --output flow-data --public --redistribution-authorized --base-url "https://raw.githubusercontent.com/${{ github.repository }}/main/flow-data/"
+      - name: Publish valid successful snapshots even if another type failed
+        if: always()
+        run: |
+          test -f flow-data/index.json || exit 0
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- flow-data
+          git diff --cached --quiet && exit 0
+          git commit -m 'Archive authorized daily sector flow'
+          git push

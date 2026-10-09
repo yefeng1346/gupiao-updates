@@ -1,0 +1,9 @@
+akshare>=1.16,<2
+efinance>=0.5.9,<1
+fastapi>=0.115,<1
+pandas>=2.2,<3
+python-dotenv>=1,<2
+requests>=2.32,<3
+pytdx==1.72
+uvicorn[standard]>=0.30,<1
+pywebview>=5.4,<6

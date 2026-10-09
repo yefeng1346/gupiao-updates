@@ -1,10 +1,10 @@
 {
-  "version": "1.5.0",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-08-stability-v1.5.0.zip",
+  "version": "1.6.0",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-09-daily-archive-v1.6.0.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.5.0/gupiao-windows-2026-10-08-stability-v1.5.0.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.6.0/gupiao-windows-2026-10-09-daily-archive-v1.6.0.zip"
   ],
-  "sha256": "a393abc38defeb62cd9536478b38d5e830f784cb78f9768021bbfd4a1a51559a",
-  "published_at": "2026-10-08",
-  "notes": "修复本地选股范围和同代码文件冲突，仅扫描沪深北A股；区分过旧/混合日期、历史不足、读取失败与条件不命中。不能由本地K线计算的DYNAINFO实时函数明确提示，不再使用近似值。资金流向保持当前榜独立，历史补齐任务可后台重试、取消、重启恢复，成功数据逐项保存；东方财富历史接口仍可能不可用，数据不足不会算成零或伪造10日榜。免费GitHub更新新增清单备用地址、下载源切换、断点续传、进度与取消；先下载和校验，再关闭安装；多窗口保护与失败回滚。在线升级保留API Key、配置、数据库、公式及选股结果。本次升级成功后自动换入新版更新器，之后更新使用新流程。"
+  "sha256": "79e22ed92234343a78a57ba02caf8b0cce03918e8857cb6ba942fb4e6e13fa66",
+  "published_at": "2026-10-09",
+  "notes": "资金流向改为完整当天榜单加本地逐日档案：修复来源停在15:00无法归档；结合实际采集时间确认收盘，旧盘中数据不变成收盘数据。软件打开时15:10后自动采集并复核，多窗口租约去重；修订保留旧值。一键更新不再等待历史接口，10日榜仅使用最近10个交易日完整记录，缺失不当作零。显示缓存清理与历史删除分开，删除前备份。保留当前榜样式，文件导入和不稳定历史补缺移入高级。集中历史库校验与多地址同步能力已加入，但未确认来源分发授权前不启用公共采集。同花顺实测403，未冒充可用联网备用源；通达信普通日线不含主力资金。沿用免费GitHub断点续传、哈希校验、回滚更新；升级保留Key、配置、数据库、公式、选股结果。"
 }

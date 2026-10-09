@@ -1,0 +1,2816 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23315cf5'/%3E%3Cpath d='M14 44 27 31l9 8 14-19' fill='none' stroke='white' stroke-width='6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <title>本地股票板块复盘工具</title>
+  <style>
+    :root { color-scheme: light; --base-font-size:14px; --bg:#f5f7fb; --surface:#fff; --surface-soft:#f8faff; --text:#172033; --muted:#718096; --line:#e5eaf2; --blue:#315cf5; --blue-dark:#2448c9; --teal:#0e9f8e; --red:#e05252; --green:#0d9b78; --amber:#9a6500; --shadow:0 14px 36px rgba(43,58,102,.08); }
+    * { box-sizing:border-box; }
+    body { margin:0; background:radial-gradient(circle at top left,#edf2ff 0,#f5f7fb 34%,#f7f9fc 100%); color:var(--text); font-size:var(--base-font-size); line-height:1.55; font-family:system-ui,-apple-system,"Microsoft YaHei",sans-serif; }
+    header { position:relative; overflow:hidden; background:linear-gradient(120deg,#162757 0%,#315cf5 58%,#16a394 140%); color:#fff; padding:34px max(20px,calc((100% - 1320px)/2)); }
+    header::after { content:""; position:absolute; width:360px; height:360px; right:-80px; top:-180px; border:1px solid #ffffff35; border-radius:50%; box-shadow:0 0 0 30px #ffffff0d,0 0 0 60px #ffffff08; }
+    header h1 { position:relative; z-index:1; margin:0 0 7px; font-size:28px; letter-spacing:.5px; }
+    header p { position:relative; z-index:1; max-width:820px; margin:0; color:#e4ebff; }
+    .eyebrow { position:relative; z-index:1; margin-bottom:8px; color:#b9c9ff; font-size:11px; font-weight:700; letter-spacing:1.7px; text-transform:uppercase; }
+    main { max-width:1320px; margin:22px auto; padding:0 18px 48px; }
+    .toolbar,.card { background:var(--surface); border:1px solid #e8edf5; border-radius:16px; padding:18px; box-shadow:var(--shadow); }
+    .toolbar { position:sticky; top:12px; z-index:5; display:flex; flex-wrap:wrap; gap:11px; align-items:end; margin-bottom:18px; backdrop-filter:blur(14px); }
+    label { display:flex; flex-direction:column; gap:5px; color:var(--muted); font-size:12px; font-weight:600; }
+    input,select,button,textarea { border:1px solid #dbe2ee; border-radius:10px; padding:9px 11px; background:#fff; color:var(--text); font:inherit; transition:border-color .18s,box-shadow .18s,transform .18s; }
+    input:focus,select:focus,textarea:focus { outline:0; border-color:#87a0ff; box-shadow:0 0 0 3px #315cf51a; }
+    button { cursor:pointer; background:linear-gradient(135deg,var(--blue),#5277ff); color:#fff; border-color:var(--blue); font-weight:700; box-shadow:0 6px 14px #315cf525; }
+    button:hover:not(:disabled) { background:linear-gradient(135deg,var(--blue-dark),var(--blue)); transform:translateY(-1px); }
+    button.secondary { background:#fff; color:var(--text); border-color:#dbe2ee; box-shadow:none; }
+    button.secondary:hover:not(:disabled) { color:var(--blue); border-color:#9db0ff; background:#f7f9ff; }
+    button.danger { background:#fff7f7; color:var(--red); border-color:#f4b7b7; box-shadow:none; }
+    button.danger:disabled { background:#f5f6f8; color:#8b95a7; border-color:#dfe4ec; }
+    button:disabled { opacity:.55; cursor:not-allowed; transform:none; }
+    button.is-busy:disabled { cursor:wait; }
+    .status { flex:1 1 260px; margin-left:auto; color:var(--muted); font-size:12px; text-align:right; }
+    .update-notice { display:flex; flex:1 1 100%; flex-wrap:wrap; align-items:center; gap:8px 12px; padding:10px 12px; border:1px solid #b9c9ff; border-radius:11px; background:linear-gradient(135deg,#f3f6ff,#f8fffd); color:#29458f; }
+    .update-notice[hidden] { display:none; }
+    .update-notice strong { color:#1f3779; }
+    .update-notice small { flex:1 1 360px; color:#617395; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; margin-bottom:18px; }
+    .grid.three { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    .card { margin-bottom:18px; }
+    .card h2 { display:flex; align-items:center; gap:8px; margin:0 0 12px; font-size:18px; letter-spacing:.1px; }
+    .card h2::before { content:""; width:4px; height:19px; border-radius:99px; background:linear-gradient(var(--blue),var(--teal)); }
+    .card h3 { margin:14px 0 6px; font-size:14px; }
+    .metric { display:inline-flex; gap:5px; margin:0 14px 6px 0; }
+    .muted { color:var(--muted); }
+    .up { color:var(--red); font-weight:700; } .down { color:var(--green); font-weight:700; }
+    .table-wrap { overflow:auto; max-height:520px; border:1px solid #edf0f6; border-radius:11px; }
+    .history-wrap { max-height:720px; }
+    /* Each ranking table must own its horizontal overflow.  Without this
+       wrapper a long sector name or the last column can paint over the next
+       ranking card in the dual-source layout. */
+    .mini-table-wrap { width:100%; max-width:100%; overflow-x:auto; overflow-y:hidden; border:1px solid #edf0f6; border-radius:11px; background:#fff; contain:paint; }
+    .mini-table-wrap table { min-width:560px; }
+    .mini-table-wrap th,.mini-table-wrap td { padding:8px 9px; }
+    .mini-table-wrap th:first-child,.mini-table-wrap td:first-child { width:150px; min-width:126px; }
+    .mini-table-wrap th:not(:first-child),.mini-table-wrap td:not(:first-child) { min-width:82px; }
+    .mini-table-wrap th { position:static; }
+    .mini-table-wrap .stock-cell { min-width:132px; }
+    .history-search { display:flex; flex-wrap:wrap; align-items:end; gap:10px; margin:0 0 12px; }
+    .history-search label { flex:1 1 280px; }
+    .history-search-status { flex:1 1 100%; margin:0; min-height:22px; }
+    .history-sector-link { padding:0; border:0; background:transparent; color:var(--text); box-shadow:none; font:inherit; font-weight:700; text-align:left; cursor:pointer; }
+    .history-sector-link:hover:not(:disabled) { color:var(--blue); background:transparent; text-decoration:underline; transform:none; }
+    .history-sector-link:focus-visible { outline:3px solid #87a0ff; outline-offset:3px; border-radius:4px; }
+    table { width:100%; border-collapse:collapse; white-space:nowrap; }
+    th,td { padding:9px 10px; border-bottom:1px solid var(--line); text-align:right; vertical-align:top; }
+    th:first-child,td:first-child,th:nth-child(2),td:nth-child(2) { text-align:left; }
+    tbody tr:hover { background:#f8faff; }
+    table tbody tr.selectable-row { cursor:pointer; }
+    table tbody tr.selectable-row > td { transition:background .15s,box-shadow .15s; }
+    table tbody tr.selectable-row.is-selected > td,
+    table tbody tr.selectable-row.is-selected:hover > td { background:#fff1b8 !important; }
+    table tbody tr.selectable-row.is-selected > td:first-child { box-shadow:inset 4px 0 0 #e4a51a; }
+    table tbody tr.selectable-row.is-selected .muted { color:#80631d; }
+    .stock-cell { display:inline-flex; flex-direction:column; gap:1px; min-width:132px; white-space:normal; line-height:1.35; }
+    .stock-cell small { color:var(--muted); font-size:11px; }
+    th { position:sticky; top:0; z-index:1; background:#f4f7fc; color:#60708a; font-weight:700; }
+    .history-cell { min-width:126px; line-height:1.4; font-size:12px; }
+    .history-cell b { font-size:13px; }
+    .history-cell .muted { font-size:11px; }
+    .rank-movement-cell { min-width:132px; text-align:center !important; font-size:14px; font-weight:700; }
+    .rank-movement-cell .muted { display:block; margin-top:3px; font-size:11px; font-weight:400; }
+    /* Keep the row context visible while the 20-day history table scrolls. */
+    .history-wrap table { min-width:1900px; }
+    .history-wrap .history-rank-col,
+    .history-wrap .history-sector-col { position:sticky; background:#fff; z-index:2; text-align:left; }
+    .history-wrap .history-rank-col { left:0; width:72px; min-width:72px; }
+    .history-wrap .history-sector-col { left:72px; width:150px; min-width:150px; box-shadow:8px 0 12px -12px rgba(30,54,92,.75); }
+    .history-wrap thead .history-rank-col,
+    .history-wrap thead .history-sector-col { z-index:5; background:#f4f7fc; }
+    .history-wrap tbody tr:hover .history-rank-col,
+    .history-wrap tbody tr:hover .history-sector-col { background:#f8faff; }
+    pre { white-space:pre-wrap; margin:0; font:14px/1.7 system-ui,-apple-system,"Microsoft YaHei",sans-serif; }
+    /* LLM reports are long-form reading content: give Chinese text more
+       presence and rhythm without making the entire dashboard bold. */
+    #llmReport { color:#2b3950; }
+    #llmReport > .muted { margin:0 0 10px; font-size:13px; font-weight:600; }
+    .llm-report-meta { margin:0 0 10px; font-size:13px; font-weight:700; }
+    .llm-report-highlights { margin:0 0 14px; padding:14px; border:1px solid #dce6f5; border-radius:14px; background:linear-gradient(135deg,#f5f8ff,#ffffff); }
+    .llm-report-highlights-title { display:flex; align-items:center; gap:7px; margin:0 0 10px; color:#263f86; font-size:16px; font-weight:800; }
+    .llm-report-highlights-title::before { content:"★"; color:#e09a2d; font-size:15px; }
+    .llm-highlight-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+    .llm-highlight { min-height:88px; padding:11px 12px; border:1px solid #dfe7f4; border-left:4px solid #6282d8; border-radius:11px; background:#fff; }
+    .llm-highlight.positive { border-color:#f1d6d6; border-left-color:#d95757; background:#fffafa; }
+    .llm-highlight.risk { border-color:#f3dfbb; border-left-color:#dc922e; background:#fffaf1; }
+    .llm-highlight.observation { border-color:#dfd8f2; border-left-color:#8069bd; background:#fbf9ff; }
+    .llm-highlight-label { display:block; margin-bottom:5px; color:#5e7194; font-size:12px; font-weight:800; }
+    .llm-highlight.positive .llm-highlight-label { color:#b84242; }
+    .llm-highlight.risk .llm-highlight-label { color:#a56a13; }
+    .llm-highlight.observation .llm-highlight-label { color:#7357aa; }
+    .llm-highlight-text { color:#2b3950; font-size:15px; font-weight:650; line-height:1.75; }
+    .llm-report-sections { display:grid; gap:12px; }
+    .llm-block { padding:14px 18px 15px; border:1px solid #e1e8f3; border-left:5px solid #86a0d9; border-radius:12px; background:linear-gradient(145deg,#ffffff,#f9fbff); }
+    .llm-block.positive { border-color:#f0d9d9; border-left-color:#d95757; background:linear-gradient(145deg,#fffafa,#ffffff); }
+    .llm-block.risk { border-color:#f2dfbd; border-left-color:#dc922e; background:linear-gradient(145deg,#fffaf1,#ffffff); }
+    .llm-block.observation { border-color:#e1daf2; border-left-color:#8069bd; background:linear-gradient(145deg,#fbf9ff,#ffffff); }
+    .llm-block-label { display:inline-flex; align-items:center; min-height:22px; margin-bottom:6px; padding:2px 8px; border-radius:999px; background:#edf2ff; color:#526ba8; font-size:12px; font-weight:800; }
+    .llm-block.positive .llm-block-label { background:#ffebeb; color:#b84242; }
+    .llm-block.risk .llm-block-label { background:#fff0d4; color:#a56a13; }
+    .llm-block.observation .llm-block-label { background:#eee9fb; color:#7357aa; }
+    .llm-block-heading { margin:0 0 7px; color:#1d2d49; font-size:18px; font-weight:850; line-height:1.5; letter-spacing:.01em; }
+    .llm-block-body { color:#26344b; font-family:"Microsoft YaHei UI","Microsoft YaHei","PingFang SC","Noto Sans CJK SC",system-ui,sans-serif; font-size:16px; font-weight:600; line-height:1.95; letter-spacing:.015em; text-rendering:optimizeLegibility; }
+    .llm-block-body > div + div { margin-top:7px; }
+    .llm-list-item { position:relative; padding-left:1.1em; }
+    .llm-list-item::before { content:"•"; position:absolute; left:.15em; color:#6883cc; font-weight:900; }
+    .llm-block.positive .llm-list-item::before { color:#d95757; }
+    .llm-block.risk .llm-list-item::before { color:#dc922e; }
+    .llm-block.observation .llm-list-item::before { color:#8069bd; }
+    .report-metric { display:inline-block; margin:0 .08em; padding:0 .3em; border-radius:5px; background:#edf2ff; color:#3154c9; font-weight:850; letter-spacing:0; }
+    .report-metric.positive { background:#ffebeb; color:#c13e3e; }
+    .report-metric.negative { background:#e8f7f2; color:#0b866d; }
+    .error { color:var(--red); white-space:pre-wrap; }
+    .notice { background:#fffaf0; border-color:#f5d98d; color:var(--amber); }
+    .status-panel { display:flex; flex-wrap:wrap; gap:8px 22px; margin-bottom:10px; }
+    .status-panel span { color:var(--muted); }
+    .warning-list { margin:8px 0 0; padding-left:20px; color:var(--amber); }
+    .tag { display:inline-block; padding:3px 9px; border-radius:999px; background:#edf2ff; color:#3154c9; margin:2px 4px 2px 0; font-size:12px; }
+    .tag.warn { background:#fff4df; color:#a26100; }
+    .bucket { border-top:1px solid var(--line); padding:10px 0; }
+    .bucket:first-child { border-top:0; padding-top:0; }
+    .bucket-title { display:flex; justify-content:space-between; gap:10px; font-weight:600; }
+    .rule { color:var(--muted); font-size:12px; }
+    .search-form { display:flex; flex-wrap:wrap; gap:10px; align-items:end; }
+    .search-form label { flex:1 1 280px; }
+    .search-results { margin-top:12px; overflow:auto; }
+    .search-results table { min-width:760px; }
+    .search-results th,.search-results td { text-align:left; }
+    .search-results .history-yes { color:var(--green); }
+    .search-results .history-no { color:var(--amber); }
+    .constituent-panel { margin:0 0 14px; padding:13px; border:1px solid #cfe1f6; border-radius:13px; background:linear-gradient(145deg,#f5f9ff,#fff); }
+    .constituent-panel[hidden] { display:none; }
+    .constituent-panel-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:9px; }
+    .constituent-panel-head h3 { margin:0; color:#243b70; font-size:16px; }
+    .constituent-panel-head p { margin:3px 0 0; }
+    /* Keep a long constituent list inside the opened panel.  Without an
+       overflow container, max-height only limits the box itself and the
+       table paints over the history table below it. */
+    .constituent-table { max-height:360px; overflow:auto; border:1px solid #edf0f6; border-radius:9px; background:#fff; }
+    .constituent-table th { position:sticky; top:0; z-index:2; background:#f4f7fc; }
+    .constituent-table table { min-width:720px; }
+    .constituent-table th,.constituent-table td { text-align:right; }
+    .constituent-table th:first-child,.constituent-table td:first-child,
+    .constituent-table th:nth-child(2),.constituent-table td:nth-child(2),
+    .constituent-table th:nth-child(3),.constituent-table td:nth-child(3) { text-align:left; }
+    .security-etf { color:#7b55b5; font-weight:700; }
+    .security-stock { color:#3154c9; }
+    .formula-library { display:grid; grid-template-columns:minmax(220px,1fr) minmax(220px,1fr); gap:10px; align-items:end; margin:12px 0 10px; }
+    .formula-library-actions { display:flex; flex-wrap:wrap; gap:8px; }
+    .formula-library-actions button { min-width:92px; }
+    .formula-input { width:100%; min-height:220px; resize:vertical; font-family:Consolas,"Microsoft YaHei",monospace; line-height:1.55; }
+    .formula-controls { display:flex; flex-wrap:wrap; align-items:end; gap:10px; margin-top:10px; }
+    .formula-controls label { min-width:160px; }
+    .formula-status { margin-top:10px; min-height:24px; }
+    .formula-results { margin-top:10px; overflow:auto; }
+    .formula-results table { min-width:900px; }
+    .formula-results th,.formula-results td { text-align:right; }
+    .formula-results th:first-child,.formula-results td:first-child,
+    .formula-results th:nth-child(2),.formula-results td:nth-child(2) { text-align:left; }
+    .formula-history { margin-top:16px; padding-top:14px; border-top:1px solid #e7ebf4; }
+    .formula-history-controls { display:flex; flex-wrap:wrap; align-items:end; gap:10px; }
+    .formula-history-controls label { min-width:300px; }
+    .single-mode-only[hidden],.dual-source-controls[hidden],.dual-source-workspace[hidden],.toolbar label[hidden] { display:none !important; }
+    .dual-source-controls { display:flex; flex:1 1 100%; flex-wrap:wrap; align-items:end; gap:10px; padding:12px; border:1px solid #cfe0ff; border-radius:13px; background:linear-gradient(135deg,#f4f7ff,#f7fffd); }
+    .dual-source-controls .dual-source-title { flex:1 1 100%; color:#29458f; font-weight:700; }
+    .dual-source-controls label { min-width:170px; }
+    .dual-source-controls .dual-source-status { flex:1 1 260px; min-height:28px; align-self:center; color:var(--muted); font-size:12px; }
+    .dual-source-workspace { padding:14px; }
+    .dual-source-workspace > h2 { margin-bottom:5px; }
+    .dual-source-workspace > p { margin:0 0 12px; }
+    /* Keep local and network reports side by side for direct comparison.  The
+       individual tables own their horizontal overflow, so a narrow panel no
+       longer needs to force the two source panels into a vertical stack. */
+    .dual-source-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; align-items:start; }
+    .dual-source-panel { min-width:0; overflow:hidden; padding:14px; border:1px solid #cfe0ff; border-radius:15px; background:linear-gradient(145deg,#fbfcff,#fff); }
+    .dual-source-panel.network { border-color:#bfe8df; background:linear-gradient(145deg,#f9fffd,#fff); }
+    .dual-source-panel-header { margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid #e6ebf4; }
+    .dual-source-panel-header h3 { margin:0; color:#21396f; font-size:18px; }
+    .dual-source-panel-header p { margin:2px 0 9px; color:var(--muted); }
+    .dual-source-panel-meta { display:flex; flex-wrap:wrap; gap:7px; }
+    .dual-source-panel-meta span { padding:4px 8px; border-radius:8px; background:#f0f4fc; color:#617395; font-size:12px; }
+    .dual-source-panel.network .dual-source-panel-meta span { background:#ecfaf6; }
+    .dual-source-panel-status { margin:0 0 10px; padding:8px 10px; border-radius:9px; background:#f6f8fc; color:var(--muted); font-size:12px; }
+    .dual-source-panel-section { margin-top:12px; }
+    .dual-source-panel-section h4 { margin:0 0 7px; color:#334d7e; font-size:14px; }
+    .dual-source-panel .table-wrap { max-height:430px; }
+    .dual-source-panel .history-wrap { max-height:430px; }
+    .dual-source-panel .history-wrap table { min-width:1200px; }
+    .dual-source-panel .history-wrap .history-rank-col { width:55px; min-width:55px; }
+    .dual-source-panel .history-wrap .history-sector-col { left:55px; width:130px; min-width:130px; }
+    .dual-source-panel .history-wrap .history-rank-col,
+    .dual-source-panel .history-wrap .history-sector-col { position:sticky; }
+    .dual-source-panel .dual-panel-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+    .dual-source-panel .dual-panel-grid > section { min-width:0; overflow:hidden; }
+    .dual-source-panel details { margin-top:12px; border-top:1px solid #e6ebf4; padding-top:9px; }
+    .dual-source-panel summary { cursor:pointer; color:#334d7e; font-weight:700; }
+    .dual-source-panel .constituent-panel { margin-top:10px; }
+    .dual-panel-tabs { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:10px; }
+    .dual-panel-tabs[hidden] { display:none; }
+    .dual-panel-tabs button { padding:6px 10px; font-size:12px; }
+    .dual-source-panel .error { display:block; }
+    .report-tabs { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:0 0 14px; padding:10px 12px; border:1px solid #e8edf5; border-radius:12px; background:#fff; box-shadow:var(--shadow); }
+    .report-tabs[hidden] { display:none; }
+    .report-tabs button { padding:7px 12px; }
+    .report-tabs button.active { background:linear-gradient(135deg,var(--blue-dark),var(--blue)); color:#fff; border-color:var(--blue); }
+    .capital-flow-controls { display:flex; flex-wrap:wrap; align-items:end; gap:10px; }
+    .capital-flow-controls label { min-width:150px; }
+    .capital-flow-status { margin-top:10px; padding:9px 11px; border-radius:10px; background:#f5f8ff; }
+    .capital-flow-panels { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:12px; }
+    .capital-flow-panel { min-width:0; padding:12px; border:1px solid #e4eaf5; border-radius:12px; background:#fff; }
+    .capital-flow-panel h3 { margin:0 0 8px; color:#2b457e; font-size:15px; }
+    .capital-flow-panel-meta { margin:0 0 10px; color:var(--muted); font-size:12px; }
+    .capital-flow-rank-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .capital-flow-rank-card { min-width:0; padding:10px; border:1px solid #edf0f6; border-radius:10px; background:#fcfdff; }
+    .capital-flow-rank-card h4 { margin:0 0 8px; color:#334d7e; font-size:14px; }
+    .capital-flow-rank-card p { margin:0 0 8px; color:var(--muted); font-size:12px; }
+    .capital-flow-panels { grid-template-columns:1fr; }
+    .capital-flow-panel td:nth-child(2) small { display:block; font-size:11px; }
+    .capital-flow-table { overflow:auto; border:1px solid #edf0f6; border-radius:10px; }
+    .capital-flow-table table { min-width:1050px; }
+    .capital-flow-table th,.capital-flow-table td { white-space:nowrap; }
+    .capital-flow-table th:first-child,.capital-flow-table td:first-child { text-align:center; }
+    .flow-in { color:var(--red); font-weight:700; }
+    .flow-out { color:var(--green); font-weight:700; }
+    .flow-flat { color:var(--muted); }
+    .quote-up { color:var(--green); }
+    .quote-down { color:var(--red); }
+    .confirm-panel { display:flex; flex-wrap:wrap; align-items:center; gap:8px; width:100%; padding:10px 12px; border:1px solid #f4b7b7; border-radius:10px; background:#fff4f4; color:#991b1b; }
+    .confirm-panel[hidden] { display:none; }
+    .hero-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:18px; }
+    .hero-stat { padding:14px 15px; border:1px solid #e8edf5; border-radius:14px; background:linear-gradient(145deg,#fff,#f7f9ff); box-shadow:var(--shadow); }
+    .hero-stat small { display:block; color:var(--muted); font-weight:700; }
+    .hero-stat strong { display:block; margin-top:3px; font-size:22px; letter-spacing:.2px; }
+    #llmSection { scroll-margin-top:16px; }
+    @media (max-width:1000px) { .hero-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .capital-flow-rank-grid { grid-template-columns:1fr; } }
+    @media (max-width:900px) { .grid,.grid.three { grid-template-columns:1fr; } .status { width:100%; margin-left:0; text-align:left; } .toolbar { position:static; } }
+    @media (max-width:850px) { .dual-source-panel .dual-panel-grid { grid-template-columns:1fr; } }
+    @media (max-width:700px) { .formula-library { grid-template-columns:1fr; } }
+    @media (max-width:700px) { .capital-flow-panels { grid-template-columns:1fr; } }
+    @media (max-width:560px) { header h1 { font-size:23px; } main { padding:0 10px 32px; } .hero-grid { grid-template-columns:1fr 1fr; } .card,.toolbar { padding:14px; } .llm-highlight-grid { grid-template-columns:1fr; } .llm-block { padding:13px 14px 14px; } .llm-block-heading { font-size:17px; } .llm-block-body { font-size:15px; line-height:1.9; } .constituent-panel-head { align-items:stretch; flex-direction:column; } .constituent-panel-head button { align-self:flex-start; } .formula-input { min-height:180px; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">LOCAL MARKET LAB · BOARD REVIEW</div>
+    <h1>本地股票板块复盘工具</h1>
+    <p>把板块行情、历史强弱、资金流向和 LLM 复盘集中到一个本地工作台。数据留在本机，数字由程序计算。</p>
+  </header>
+  <main>
+    <section class="toolbar">
+      <label>数据展示
+        <select id="viewMode" aria-label="选择数据展示模式">
+          <option value="single" selected>单数据源</option>
+          <option value="dual">双数据源对照</option>
+        </select>
+      </label>
+      <label>板块范围
+        <select id="sectorType"><option value="concept">概念板块</option><option value="industry">行业板块</option><option value="all">全部板块（概念+行业）</option></select>
+      </label>
+      <label>报告日期（可选）
+        <select id="reportDateSelect" aria-label="选择报告日期" disabled><option value="">正在读取…</option></select>
+      </label>
+      <label>复盘模型
+        <select id="llmModel" aria-label="选择复盘模型">
+          <option value="deepseek-v4-pro-ga-260813">DeepSeek V4 Pro</option>
+          <option value="doubao-seed-2-1-pro-260628">Doubao-Seed-2.1-pro</option>
+        </select>
+      </label>
+      <label id="singleProviderControl" class="single-mode-only" hidden>行情数据源
+        <select id="marketProvider">
+          <option value="tdx">通达信自动（本地优先/网络回退）</option>
+          <option value="tdx_online">通达信网络数据</option>
+          <option value="tdx_standard">通达信普通版（本地）</option>
+          <option value="akshare">AkShare（网络）</option>
+          <option value="efinance">efinance（网络）</option>
+        </select>
+      </label>
+      <label>界面字号
+        <select id="fontScale" aria-label="选择界面字号">
+          <option value="14">标准</option>
+          <option value="16">舒适</option>
+          <option value="18">大字</option>
+        </select>
+      </label>
+      <label>回看自然日
+        <input id="calendarDays" type="number" min="60" max="500" value="120" />
+      </label>
+      <label>最多板块数（0=全部）
+        <input id="maxSectors" type="number" min="0" max="1000" value="0" />
+      </label>
+      <label style="min-width:240px;">同步筛选代码/名称（可选）
+        <input id="sectorCodes" type="text" placeholder="例如：880729 880920, 880681" />
+      </label>
+      <button id="syncBtn" class="single-mode-only" hidden>同步收盘数据</button>
+      <button id="loadBtn" class="secondary single-mode-only" hidden>读取本地报告</button>
+      <button id="llmBtn" class="single-mode-only" hidden>调用 DeepSeek V4 Pro 生成报告</button>
+      <button id="clearBtn" class="danger">清空本地数据</button>
+      <button id="updateBtn" class="secondary" type="button">检查更新</button>
+      <div id="clearConfirm" class="confirm-panel" hidden role="alertdialog" aria-live="polite">
+        <span>确定清空全部本地行情数据吗？这会删除行情历史和同步记录，但会保留公式库与已保存的选股结果。</span>
+        <button id="confirmClearBtn" class="danger">确认清空</button>
+        <button id="cancelClearBtn" class="secondary">取消</button>
+      </div>
+      <div id="updateNotice" class="update-notice" hidden role="status" aria-live="polite"></div>
+      <div id="dualSourceControls" class="dual-source-controls" hidden>
+        <div class="dual-source-title">双数据源对照：左侧显示本地数据，右侧显示网络数据；两边独立读取、独立同步，打开工具不会自动下载行情。</div>
+        <label>本地数据
+          <select id="dualLocalProvider">
+            <option value="tdx_standard">通达信普通版（本地）</option>
+            <option value="tdx">通达信自动（本地优先/网络回退）</option>
+          </select>
+        </label>
+        <label>网络数据
+          <select id="dualNetworkProvider">
+            <option value="akshare">AkShare（网络）</option>
+            <option value="efinance">efinance（网络）</option>
+            <option value="tdx_online">通达信网络数据</option>
+          </select>
+        </label>
+        <label>日期模式
+          <select id="dualDateMode">
+            <option value="latest">各自最新日期</option>
+            <option value="common">按共同日期对齐</option>
+          </select>
+        </label>
+        <button id="dualLoadBtn" class="secondary" type="button">读取两边报告</button>
+        <button id="dualSyncLocalBtn" type="button">同步本地</button>
+        <button id="dualSyncNetworkBtn" type="button">同步网络</button>
+        <button id="dualSyncBothBtn" type="button">同时同步两边</button>
+        <span id="dualSourceStatus" class="dual-source-status" aria-live="polite">请选择数据源后读取报告。</span>
+      </div>
+      <div id="status" class="status">正在读取状态…</div>
+    </section>
+
+    <section id="heroGrid" class="hero-grid single-mode-only" hidden aria-label="当前数据概览">
+      <div class="hero-stat"><small>报告日期</small><strong id="heroReportDate">—</strong></div>
+      <div class="hero-stat"><small>板块覆盖</small><strong id="heroCoverage">—</strong></div>
+      <div class="hero-stat"><small>市场状态</small><strong id="heroMarketState">—</strong></div>
+      <div class="hero-stat"><small>行情来源</small><strong id="heroProvider">—</strong></div>
+    </section>
+
+    <section class="card">
+      <h2>导入结构化板块快照（可选）</h2>
+      <p class="muted">如果外部程序或 API 能提供原始排名和 RPS50，可粘贴 JSON 数组或导入 JSON/CSV 文件。工具只保存原值，不会从涨跌幅猜排名；普通行情同步仍使用本地计算。</p>
+      <textarea id="snapshotJson" rows="6" style="width:100%;box-sizing:border-box;" placeholder='[{"trade_date":"2026-08-20","sector_type":"concept","sector_code":"880729","sector_name":"CXO概念","rank":1,"rps50":98,"pct_change":5.26,"close":1051.9,"amount":773800000000}]'></textarea>
+      <div style="margin-top:10px;display:flex;flex-wrap:wrap;align-items:end;gap:10px;"><button id="importSnapshotBtn" class="secondary">导入结构化快照</button><label style="min-width:240px;">从文件导入
+        <input id="snapshotFile" type="file" accept=".json,.csv,application/json,text/csv" />
+      </label><span id="snapshotStatus" class="muted"></span></div>
+    </section>
+
+    <section class="card notice">
+      首次同步建议把“最多板块数”设置为 10 测试流程，确认正常后改为 0 获取全部板块。工具会自动选择覆盖较完整的最新交易日；如果上游接口提前返回下一交易日的少量数据，会在数据状态中提示并忽略该日期。
+    </section>
+
+    <section class="card">
+      <h2>板块代码/名称搜索</h2>
+      <p class="muted">先点击“更新板块目录”，再输入代码或名称搜索。结果会标明代码体系，以及本地是否已有历史行情。使用 tdx 数据源时可直接搜索截图中的通达信 880xxx；没有本地通达信目录时会尝试远程协议。AkShare/efinance 使用各自的代码体系。</p>
+      <div class="search-form">
+        <label>搜索代码或名称
+          <input id="boardSearchInput" type="search" placeholder="例如：880729 880681, 880652" />
+        </label>
+        <button id="catalogBtn" class="secondary">更新板块目录</button>
+        <button id="networkDiagnoseBtn" class="secondary" type="button">网络诊断</button>
+        <button id="searchBtn">搜索</button>
+      </div>
+      <div id="searchStatus" class="muted"></div>
+      <div id="networkDiagnoseStatus" class="muted" aria-live="polite"></div>
+      <div id="searchResults" class="search-results"></div>
+    </section>
+
+    <section class="card" id="formulaSection">
+      <h2>通达信公式选股</h2>
+      <p class="muted">可以保存多个自定义公式并自行命名。公式会在本机保存，选股运行记录也会单独留档；清空本地行情数据不会删除公式和选股结果。支持常用 TongDaXin 函数，遇到暂不支持的函数会明确提示。分钟周期使用本地 .lc5，日线/周线使用 .day 文件。</p>
+      <div class="formula-library">
+        <label>已保存公式
+          <select id="formulaSelect" aria-label="已保存公式"></select>
+        </label>
+        <label>公式名称
+          <input id="formulaName" type="text" maxlength="100" placeholder="例如：周线强势突破" />
+        </label>
+      </div>
+      <div class="formula-library-actions">
+        <button id="newFormulaBtn" class="secondary" type="button">新建公式</button>
+        <button id="saveFormulaBtn" class="secondary" type="button">保存公式</button>
+        <button id="deleteFormulaBtn" class="danger" type="button">删除公式</button>
+      </div>
+      <textarea id="formulaInput" class="formula-input" spellcheck="false" aria-label="公式内容">换手:=VOL/CAPITAL*100;
+十日换手:=SUM(换手,10);
+VA:=IF(CLOSE&gt;REF(CLOSE,1),VOL,-VOL);
+OBV:=SUM(IF(CLOSE=REF(CLOSE,1),0,VA),0);
+MAOBV:=MA(OBV,30);
+角度:=ATAN((MAOBV/REF(MAOBV,20)-1)*100)*180/3.1416;
+OBV角度:=COUNT(MAOBV&gt;REF(MAOBV,1),20)=20 AND 角度&gt;=30;
+X_1:=100-100*(HHV(HIGH,55)-CLOSE)/(HHV(HIGH,55)-LLV(LOW,55));
+X_2:=100*(HHV(HIGH,13)-CLOSE)/(HHV(HIGH,13)-LLV(LOW,13));
+X_3:=MA(X_2,13);
+资金:=X_1-X_3;
+五日资金:=SUM(资金,5);
+X_4:=CROSS(资金,0);
+X_5:=REF(X_4,15)&gt;0;
+X_6:=EVERY(资金&gt;0,8);
+X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
+基本面合格:=FINANCE(25)&gt;0 AND FINANCE(43)&gt;0 AND FINANCE(57)&gt;FINANCE(22) AND FINANCE(9)&lt;50;
+选股:OBV角度 AND X_4 AND 基本面合格;</textarea>
+      <div class="formula-controls">
+        <label>选股周期
+          <select id="formulaTimeframe">
+            <option value="5m">5分钟</option>
+            <option value="15m">15分钟</option>
+            <option value="30m">30分钟</option>
+            <option value="60m">60分钟</option>
+            <option value="daily">日线</option>
+            <option value="weekly" selected>周线</option>
+          </select>
+        </label>
+        <label>最多显示结果
+          <input id="formulaMaxResults" type="number" min="1" max="300" value="100" />
+        </label>
+        <button id="formulaScreenBtn" type="button">开始选股</button>
+        <span id="formulaStatus" class="formula-status muted" aria-live="polite">尚未执行。</span>
+      </div>
+      <div id="formulaResults" class="formula-results"></div>
+      <div class="formula-history">
+        <h3>已保存的选股结果</h3>
+        <div class="formula-history-controls">
+          <label>选择历史记录
+            <select id="formulaRunSelect" aria-label="已保存的选股结果"></select>
+          </label>
+          <button id="loadFormulaRunBtn" class="secondary" type="button">查看结果</button>
+          <button id="deleteFormulaRunBtn" class="danger" type="button">删除结果</button>
+          <span id="formulaRunStatus" class="muted" aria-live="polite">选股后会自动保存结果。</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="dualWorkspace" class="card dual-source-workspace" hidden>
+      <h2>双数据源对照</h2>
+      <p class="muted">两列报告互不覆盖：左边是本地通达信数据，右边是网络数据。日期、板块数量、历史完整度和网络补充状态分别显示。</p>
+      <div id="dualPanels" class="dual-source-grid"></div>
+    </section>
+
+    <div id="singleReportArea" hidden>
+    <section class="card">
+      <h2>数据状态</h2>
+      <div id="dataStatus" class="muted">尚未读取报告。</div>
+      <div id="automationStatus" class="muted" style="margin-top:8px;">后台收盘同步：读取中…</div>
+    </section>
+
+    <section class="card" id="capitalFlowSection">
+      <h2>东方财富板块资金流向</h2>
+      <button id="clearFlowCacheBtn" class="secondary" type="button">清理显示缓存（保留历史）</button>
+      <div id="clearCapitalFlowConfirm" class="notice" hidden>
+        将清空概念和行业板块的当前资金流向、历史资金流向、10日榜缓存及板块目录。清空前自动备份；不影响收盘报告、公式、选股结果和Key。建议先关闭其它软件窗口。
+        <button id="confirmClearCapitalFlowBtn" class="danger" type="button">确认清空资金流向</button>
+        <button id="cancelClearCapitalFlowBtn" class="secondary" type="button">取消</button>
+      </div>
+      <h3>当前资金流向</h3>
+      <p class="muted">当前接口独立读取，不依赖历史查询。每次保存完整板块列表，显示数量只影响页面。盘中快照不用于10日统计；软件保持打开时，15:10后自动采集、复核收盘数据。重启先恢复本地结果；后台收盘采集不影响页面打开。</p>
+      <div class="capital-flow-controls">
+        <label>显示数量<select id="currentFlowLimit"><option value="20">前20</option><option value="50" selected>前50</option><option value="100">前100</option><option value="1000">全部</option></select></label>
+        <button id="currentFlowRefresh" class="secondary" type="button">刷新当前资金流向</button>
+        <span id="currentFlowStatus" class="muted" aria-live="polite"></span>
+      </div>
+      <div id="currentFlowTable"></div>
+      <h3>历史日期查询与10日资金流入榜</h3>
+      <p class="muted">点击“一键更新资金数据”，刷新当天完整榜单、保存可确认的收盘数据并计算本地10日榜，不等待历史接口。最近10个交易日必须逐日完整；缺失不算零，也不拿更早日期凑数。集中历史库未启用前，漏开软件的日期仍需可用历史渠道补齐。历史接口仅作为高级补缺渠道。</p>
+      <div class="capital-flow-controls">
+        <label>查询日期（休市回看）
+          <input id="capitalFlowDate" type="date" />
+        </label>
+        <label>显示数量
+          <select id="capitalFlowLimit"><option value="20">前 20</option><option value="50" selected>前 50</option><option value="100">前 100</option><option value="1000">全部</option></select>
+        </label>
+        <button id="refreshCapitalFlowBtn" class="secondary" type="button">查看已保存数据</button>
+        <button id="refreshCapitalFlowOnlineBtn" class="primary" type="button">一键更新资金数据</button>
+        <button id="retryCapitalFlowBtn" class="secondary" type="button" hidden>补齐缺失数据</button>
+        <button id="cancelFlowHistoryBtn" class="secondary" type="button" hidden>取消更新</button>
+        <span id="capitalFlowStatus" class="capital-flow-status muted" aria-live="polite">选择日期后点击“查询资金流向”。</span>
+      </div>
+      <details id="flowAdvancedPanel">
+        <summary>高级：历史补缺、来源文件、删除历史档案</summary>
+        <p class="muted">同花顺联网测试尚未通过，通达信普通日线不含主力资金。下面两个文件来源并非联网备用源；来源分别保存、统计，不与东方财富混用。删除档案前自动备份，与清理显示缓存不同。</p>
+        <label>历史资金数据来源<select id="capitalFlowSource" aria-label="历史资金数据来源"><option value="eastmoney">东方财富（联网 / 本地）</option><option value="tdx_import">通达信（高级文件导入）</option><option value="ths_import">同花顺（高级文件导入）</option></select></label>
+        <button id="flowHistoryBackfillBtn" class="secondary" type="button">尝试历史接口补缺（可能失败）</button>
+        <button id="clearCapitalFlowBtn" class="danger" type="button">删除资金流向历史档案</button>
+      <details id="capitalFlowImportPanel" hidden>
+        <summary>导入此来源的逐日板块主力资金文件</summary>
+        <p class="muted">支持CSV或制表符TXT（UTF-8 / GB18030）。必须包含交易日期、板块代码、板块名称、主力净流入。仅导入已收盘交易日；普通.day/.lc5行情和成交额不能代替主力资金。来源为用户声明，程序不能验证导出软件；仅统计已导入范围。</p>
+        <div class="capital-flow-controls">
+          <label>导入板块类型<select id="flowImportType"><option value="concept">概念板块</option><option value="industry">行业板块</option></select></label>
+          <label>无单位金额列的单位<select id="flowImportUnit"><option>元</option><option>万元</option><option>亿元</option></select></label>
+          <label>文件编码<select id="flowImportEncoding"><option value="utf-8">UTF-8</option><option value="gb18030">GB18030（通达信常见）</option></select></label>
+          <label>数据文件<input id="flowImportFile" type="file" accept=".csv,.txt,.tsv" /></label>
+          <label><input id="flowImportOverwrite" type="checkbox" />覆盖同日期同板块的不同记录</label>
+          <button id="flowImportBtn" class="secondary" type="button">导入并保存</button>
+          <a href="/api/sector-capital-flow/import-template" download>下载CSV字段模板</a>
+        </div>
+        <p id="flowImportStatus" class="muted" aria-live="polite"></p>
+      </details>
+      </details>
+      <div id="capitalFlowTable"></div>
+    </section>
+
+    <div id="reportTabs" class="report-tabs" hidden></div>
+
+    <section class="card">
+      <h2>1. 20日历史前300序列表</h2>
+      <p id="historyMeta" class="muted"></p>
+      <div class="history-search">
+        <label for="historySectorSearch">查找板块名或代码
+          <input id="historySectorSearch" type="search" placeholder="例如：种业、粮食概念或 BK1082" autocomplete="off" />
+        </label>
+        <button id="historySectorSearchBtn" class="secondary" type="button">定位板块</button>
+        <p id="historySectorSearchStatus" class="history-search-status muted" aria-live="polite">输入板块名后会自动定位。</p>
+      </div>
+      <div id="historyConstituentPanel" class="constituent-panel" hidden>
+        <div class="constituent-panel-head">
+          <div><h3 id="historyConstituentTitle">板块成分股</h3><p id="historyConstituentStatus" class="muted">点击板块名称查看成分股和 ETF。</p></div>
+          <button id="historyConstituentClose" class="secondary" type="button">关闭</button>
+        </div>
+        <div id="historyConstituentTable" class="constituent-table"></div>
+      </div>
+      <div id="historyTable" class="table-wrap history-wrap"></div>
+    </section>
+
+    <section class="grid">
+      <div class="card"><h2>2. 单日强势前进 TOP 榜</h2><div id="dailyUp"></div></div>
+      <div class="card"><h2>3. 单日走弱 TOP 榜</h2><div id="dailyDown"></div></div>
+    </section>
+
+    <section class="grid">
+      <div class="card"><h2>4. 最近5日强势前进 TOP 榜</h2><div id="fiveUp"></div></div>
+      <div class="card"><h2>5. 最近5日走弱 TOP 榜</h2><div id="fiveDown"></div></div>
+    </section>
+
+    <section class="card">
+      <h2>6. 百名内最近5日强势前进 TOP 榜</h2>
+      <p class="muted">只保留报告日最新排名前100名的板块，再按最近5个可用交易日的名次前进幅度排序。</p>
+      <p id="fiveTop100LeaderStatus" class="muted">领涨股按板块成分股最新涨跌幅；数据通过公开行情接口补充。</p>
+      <div id="fiveTop100Up"></div>
+    </section>
+
+    <section class="card">
+      <h2>7. 最近10天至少有6天名次前进榜</h2>
+      <p class="muted">取最近10个可用交易日，比较9个相邻区间；要求排名严格前进不少于6天。缺失数据的区间不计入前进天数，窗口首日或报告日缺少排名的板块不入榜。点击任意数据行可固定高亮，再点一次取消；点击其他行会切换高亮。</p>
+      <p id="tenDayLeaderStatus" class="muted">领涨股按板块成分股最新涨跌幅；数据通过公开行情接口补充。</p>
+      <div id="tenDaySixUp"></div>
+    </section>
+
+    <section class="card">
+      <h2>8. T0/T1/T2 主线最终格局</h2>
+      <div id="groups"></div>
+    </section>
+
+    <section class="card">
+      <h2>9. 核心趋势总结</h2>
+      <div id="trend"></div>
+    </section>
+
+    <section class="card">
+      <h2>10. 操作策略</h2>
+      <div id="strategy"></div>
+    </section>
+
+    <section id="llmSection" class="card">
+      <h2>LLM 详细复盘总结</h2>
+      <div id="llmReport" class="muted" aria-live="polite">尚未生成。</div>
+    </section>
+    </div>
+  </main>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let currentReport = null;
+    let currentReports = {};
+    let activeReportType = "concept";
+    let searchResultCache = [];
+    let historySearchTimer = null;
+    const sectorLeaderRequestSerial = { fiveTop100Up: 0, tenDaySixUp: 0 };
+    let historyConstituentRequestSerial = 0;
+    const dualPanelData = {
+      local: {provider:"tdx_standard", reports:{}, activeType:"concept", error:""},
+      network: {provider:"akshare", reports:{}, activeType:"concept", error:""},
+    };
+    const dualSectorLeaderRequestSerial = {
+      local: {fiveTop100Up:0, tenDaySixUp:0},
+      network: {fiveTop100Up:0, tenDaySixUp:0},
+    };
+    const dualConstituentRequestSerial = {local:0, network:0};
+    let dualLoading = false;
+    let followLatestReport = true;
+    let formulaDefinitions = [];
+    let formulaRuns = [];
+    let activeFormulaId = null;
+    const providerLabels = {
+      akshare: "AkShare（网络）",
+      efinance: "efinance（网络）",
+      tdx: "通达信自动（本地优先/网络回退）",
+      tdx_online: "通达信网络数据",
+      tdx_standard: "通达信普通版（本地）",
+    };
+    const fallbackLlmModelOptions = [
+      {value:"deepseek-v4-pro-ga-260813", label:"DeepSeek V4 Pro"},
+      {value:"doubao-seed-2-1-pro-260628", label:"Doubao-Seed-2.1-pro"},
+    ];
+    let llmModelOptions = fallbackLlmModelOptions.slice();
+
+    function typeLabel(type) {
+      return type === "industry" ? "行业板块" : type === "concept" ? "概念板块" : "全部板块";
+    }
+
+    function selectedSectorTypes() {
+      return $("sectorType").value === "all" ? ["concept", "industry"] : [$("sectorType").value];
+    }
+
+    function activeSectorType() {
+      return $("sectorType").value === "all" ? activeReportType : $("sectorType").value;
+    }
+
+    function selectedProvider() {
+      if ($("viewMode")?.value === "dual") return $("dualLocalProvider")?.value || "tdx_standard";
+      return $("marketProvider").value || "tdx";
+    }
+
+    function dualMode() {
+      return $("viewMode")?.value === "dual";
+    }
+
+    function dualProvider(panelKey) {
+      return panelKey === "network"
+        ? ($("dualNetworkProvider")?.value || "akshare")
+        : ($("dualLocalProvider")?.value || "tdx_standard");
+    }
+
+    function providerLabel(value) {
+      return providerLabels[value] || value || "—";
+    }
+
+    function applyFontScale(value) {
+      const size = ["14", "16", "18"].includes(String(value)) ? String(value) : "14";
+      document.documentElement.style.setProperty("--base-font-size", `${size}px`);
+      $("fontScale").value = size;
+      localStorage.setItem("gupiao.fontScale", size);
+    }
+
+    function selectedLlmModel() {
+      return $("llmModel").value || fallbackLlmModelOptions[0].value;
+    }
+
+    function llmModelLabel(value) {
+      const option = llmModelOptions.find(item => item.value === value);
+      return option?.label || value || "LLM";
+    }
+
+    function updateLlmButtonLabel() {
+      $("llmBtn").textContent = `调用 ${llmModelLabel(selectedLlmModel())} 生成报告`;
+    }
+
+    function renderLlmModelOptions(health) {
+      const options = Array.isArray(health?.ark_model_options) && health.ark_model_options.length
+        ? health.ark_model_options
+        : fallbackLlmModelOptions;
+      llmModelOptions = options.filter(item => item && item.value).map(item => ({
+        value: String(item.value), label: String(item.label || item.value),
+      }));
+      const saved = localStorage.getItem("gupiao.llmModel");
+      const preferred = saved && llmModelOptions.some(item => item.value === saved)
+        ? saved
+        : health?.ark_model && llmModelOptions.some(item => item.value === health.ark_model)
+          ? health.ark_model
+          : llmModelOptions[0]?.value || "";
+      $("llmModel").innerHTML = llmModelOptions.map(item =>
+        `<option value="${esc(item.value)}">${esc(item.label)}</option>`
+      ).join("");
+      $("llmModel").value = preferred;
+      $("llmModel").disabled = !llmModelOptions.length;
+      updateLlmButtonLabel();
+    }
+
+    function renderReportTabs() {
+      const tabs = $("reportTabs");
+      if ($("sectorType").value !== "all") {
+        tabs.hidden = true;
+        tabs.innerHTML = "";
+        return;
+      }
+      const available = ["concept", "industry"].filter(type => currentReports[type]);
+      if (!available.length) {
+        tabs.hidden = true;
+        tabs.innerHTML = "";
+        return;
+      }
+      if (!available.includes(activeReportType)) activeReportType = available[0];
+      tabs.hidden = false;
+      tabs.innerHTML = `<span class="muted">全部板块已分别计算：</span>` + available.map(type =>
+        `<button type="button" class="secondary ${type === activeReportType ? "active" : ""}" data-report-type="${type}">${typeLabel(type)}报告</button>`
+      ).join("");
+      tabs.querySelectorAll("button[data-report-type]").forEach(button => {
+        button.onclick = () => {
+          activeReportType = button.dataset.reportType;
+          renderReportTabs();
+          renderReport(currentReports[activeReportType]);
+        };
+      });
+    }
+
+    function renderReportDateOptions(report) {
+      const select = $("reportDateSelect");
+      if (!select) return;
+      const dates = Array.isArray(report?.available_dates) ? report.available_dates : [];
+      if (!dates.length) {
+        select.innerHTML = `<option value="">暂无可选报告日期</option>`;
+        select.disabled = true;
+        return;
+      }
+      select.innerHTML = `<option value="">最新可用日期</option>` + dates.map(date =>
+        `<option value="${esc(date)}">${esc(date)}</option>`
+      ).join("");
+      const reportDate = report?.report_date || "";
+      select.value = followLatestReport ? "" : (dates.includes(reportDate) ? reportDate : "");
+      select.disabled = false;
+    }
+
+    async function api(url, options) {
+      const response = await fetch(url, options);
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+      if (data && data.ok === false) throw new Error(data.message || data.detail || "操作未成功");
+      return data;
+    }
+
+    function renderUpdateNotice(update, currentVersion) {
+      const notice = $("updateNotice");
+      if (!notice) return;
+      const notes = update?.notes ? `<small>${esc(update.notes)}</small>` : `<small>下载后会自动重启；API Key、历史数据、公式和选股结果都会保留。</small>`;
+      notice.innerHTML = `<strong>发现新版本 ${esc(update?.version || "")}</strong><span>当前版本 ${esc(currentVersion || "")}</span>${notes}<button id="applyUpdateBtn" type="button">立即更新</button><button id="dismissUpdateBtn" class="secondary" type="button">稍后提醒</button>`;
+      notice.hidden = false;
+      $("applyUpdateBtn").onclick = applyUpdate;
+      $("dismissUpdateBtn").onclick = () => { notice.hidden = true; };
+    }
+
+    async function checkForUpdates(manual=false) {
+      const button = $("updateBtn");
+      if (manual && button) { button.disabled = true; button.textContent = "检查中…"; }
+      try {
+        const data = await api(`/api/update/check${manual ? "?manual=1" : ""}`);
+        if (!data.configured) {
+          if (manual) $("status").textContent = "尚未配置在线更新地址 UPDATE_MANIFEST_URL。";
+          return;
+        }
+        if (data.error) {
+          if (manual) $("status").innerHTML = `<span class="notice">更新检查失败：${esc(data.error)}；不影响当前版本使用。</span>`;
+          return;
+        }
+        if (data.available && data.update) {
+          renderUpdateNotice(data.update, data.current_version);
+          if (manual) $("status").textContent = `发现新版本 ${data.update.version}。`;
+        } else if (manual) {
+          $("status").textContent = `当前已经是最新版本（${data.current_version}）。`;
+        }
+      } catch (error) {
+        if (manual) $("status").innerHTML = `<span class="notice">更新检查失败：${esc(error.message)}；不影响当前版本使用。</span>`;
+      } finally {
+        if (manual && button) { button.disabled = false; button.textContent = "检查更新"; }
+      }
+    }
+
+    async function applyUpdate() {
+      const button = $("applyUpdateBtn");
+      if (button) { button.disabled = true; button.textContent = "准备更新…"; }
+      try {
+        await api("/api/update/apply", {method:"POST"});
+        $("updateNotice").innerHTML = `<strong id="updateProgress">正在下载，软件可继续使用…</strong><button id="cancelUpdateDownload" class="secondary" type="button">取消更新</button>`;
+        $("cancelUpdateDownload").onclick = async () => {
+          $("cancelUpdateDownload").disabled = true;
+          try { await api("/api/update/cancel",{method:"POST"}); }
+          catch (error) { $("updateProgress").textContent = `取消失败：${error.message}`; $("cancelUpdateDownload").disabled = false; }
+        };
+        while (true) {
+          const state = await api("/api/update/status");
+          const size = (Number(state.bytes || 0)/1048576).toFixed(1);
+          const total = state.total ? ` / ${(state.total/1048576).toFixed(1)} MB` : " MB";
+          $("updateProgress").textContent = state.status === "downloading" ? `正在下载 ${size}${total}；第${state.attempt || 1}次尝试，备用地址自动切换；原版本仍可使用。` : state.message;
+          if (state.status === "ready") {
+            $("cancelUpdateDownload").disabled = true;
+            const installed = await api("/api/update/install",{method:"POST"});
+            $("updateNotice").innerHTML = `<strong>${esc(installed.message)}</strong>`;
+            return;
+          }
+          if (["cancelled","failed"].includes(state.status)) throw new Error(state.message);
+          await new Promise(resolve => setTimeout(resolve,1000));
+        }
+      } catch (error) {
+        $("updateNotice").innerHTML = `<span class="notice">${esc(error.message)}；原版本可继续使用。</span><button id="retrySoftwareUpdate" type="button">重新尝试</button>`;
+        $("retrySoftwareUpdate").onclick = applyUpdate;
+        $("status").textContent = "更新未安装，已下载部分会保留供下次续传。";
+      }
+    }
+
+    function esc(value) {
+      return String(value === null || value === undefined ? "-" : value)
+        .replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]));
+    }
+
+    function cleanReportInline(value) {
+      return String(value === null || value === undefined ? "" : value)
+        .replace(/\*\*(.*?)\*\*/g, "$1")
+        .replace(/__(.*?)__/g, "$1")
+        .replace(/`([^`]+)`/g, "$1");
+    }
+
+    function highlightReportText(value) {
+      const text = cleanReportInline(value);
+      const metricPattern = /(RPS50\s*(?:为|：|:)?\s*\d+(?:\.\d+)?|(?:排名|名次)\s*(?:前进|上升|下降|回落)?\s*\d+(?:\.\d+)?\s*名?|[↑↓→]\s*\d+|[+-]?\d+(?:\.\d+)?%)/gi;
+      let html = "";
+      let cursor = 0;
+      for (const match of text.matchAll(metricPattern)) {
+        const index = match.index ?? 0;
+        html += esc(text.slice(cursor, index));
+        const valueText = match[0];
+        const metricClass = /↓|下降|回落|\-\d/.test(valueText)
+          ? " negative"
+          : /↑|前进|上升|\+\d/.test(valueText)
+            ? " positive"
+            : "";
+        html += `<mark class="report-metric${metricClass}">${esc(valueText)}</mark>`;
+        cursor = index + valueText.length;
+      }
+      return html + esc(text.slice(cursor));
+    }
+
+    function reportHeading(line) {
+      const raw = cleanReportInline(line).trim();
+      const markdownHeading = /^#{1,6}\s*/.test(raw);
+      const clean = raw.replace(/^#{1,6}\s*/, "").trim();
+      if (!clean || clean.length > 80) return "";
+      if (/^[一二三四五六七八九十百]+、\s*\S+/.test(clean)) return clean;
+      if (markdownHeading) return clean;
+      if (/^\d+[.、．]\s*/.test(clean) && /(整体|强势|弱势|主线|趋势|风险|观察|策略|操作|复盘)/.test(clean)) {
+        return clean;
+      }
+      return "";
+    }
+
+    function reportBlockKind(heading, text) {
+      const haystack = `${heading} ${text}`;
+      if (/(风险|回避|谨慎|警惕|数据不足|数据限制|失效|不确定|不足)/.test(haystack)) return "risk";
+      if (/(待验证|观察条件|验证条件|观察清单|下一交易日|趋势判断|判断)/.test(haystack)) return "observation";
+      if (/(强势|主线|核心|领先|改善|前进|上涨)/.test(haystack)) return "positive";
+      return "fact";
+    }
+
+    function reportKindLabel(kind) {
+      // 强势内容直接由红色边框和正文标题表达，避免每个卡片重复显示“重点结论”。
+      return kind === "risk" ? "风险提示" : kind === "observation" ? "待验证" : kind === "positive" ? "" : "数据观察";
+    }
+
+    function reportHeadingKey(value) {
+      return cleanReportInline(value).replace(/^[#\s]*/, "").replace(/^[一二三四五六七八九十百]+[、.)．]\s*/, "").replace(/\s+/g, "").toLowerCase();
+    }
+
+    function parseLlmReport(content) {
+      const lines = String(content || "").replace(/\r/g, "").split("\n");
+      const blocks = [];
+      let heading = "";
+      let body = [];
+      const flush = () => {
+        const text = body.join("\n").trim();
+        if (text) blocks.push({heading, text, kind:reportBlockKind(heading, text)});
+        body = [];
+      };
+      lines.forEach(line => {
+        const trimmed = line.trim();
+        const candidate = reportHeading(trimmed);
+        if (candidate) {
+          flush();
+          heading = candidate;
+        } else if (trimmed) {
+          body.push(trimmed);
+        } else {
+          flush();
+        }
+      });
+      flush();
+      // 模型有时会在同一章节的每个段落前重复输出章节标题。把连续的
+      // 同名章节合并，避免一段完整内容被拆成多张几乎相同的卡片。
+      const merged = [];
+      blocks.forEach(block => {
+        const previous = merged[merged.length - 1];
+        if (previous && reportHeadingKey(previous.heading) === reportHeadingKey(block.heading)) {
+          previous.text = `${previous.text}\n\n${block.text}`.trim();
+          previous.kind = reportBlockKind(previous.heading, previous.text);
+        } else {
+          merged.push({...block});
+        }
+      });
+      return merged;
+    }
+
+    function renderReportBody(text) {
+      return text.split("\n").filter(Boolean).map(line => {
+        const listMatch = line.match(/^(?:[-*•]\s+|\d+[.)、]\s+)(.*)$/);
+        const body = listMatch ? listMatch[1] : line;
+        return `<div class="${listMatch ? "llm-list-item" : ""}">${highlightReportText(body)}</div>`;
+      }).join("");
+    }
+
+    function reportExcerpt(text) {
+      const excerpt = cleanReportInline(text).replace(/\s+/g, " ").replace(/^(?:[-*•]\s+|\d+[.)、]\s+)/, "");
+      return excerpt.length > 118 ? `${excerpt.slice(0, 118)}…` : excerpt;
+    }
+
+    function renderLlmReport(content, modelLabel) {
+      const blocks = parseLlmReport(content);
+      if (!blocks.length) return `<span class="muted">模型没有返回可显示的报告正文。</span>`;
+      const highlights = blocks.filter(block => block.kind !== "fact").slice(0, 3);
+      if (highlights.length < 3) {
+        blocks.filter(block => !highlights.includes(block)).slice(0, 3 - highlights.length).forEach(block => highlights.push(block));
+      }
+      const highlightHtml = highlights.length
+        ? `<div class="llm-report-highlights"><div class="llm-report-highlights-title">先看重点</div><div class="llm-highlight-grid">${highlights.map(block =>
+            `<div class="llm-highlight ${block.kind}">${reportKindLabel(block.kind) ? `<span class="llm-highlight-label">${esc(reportKindLabel(block.kind))}</span>` : ""}<div class="llm-highlight-text">${highlightReportText(reportExcerpt(block.text))}</div></div>`
+          ).join("")}</div></div>`
+        : "";
+      const sections = blocks.map(block =>
+        `<section class="llm-block ${block.kind}">${reportKindLabel(block.kind) ? `<span class="llm-block-label">${esc(reportKindLabel(block.kind))}</span>` : ""}${block.heading ? `<h3 class="llm-block-heading">${highlightReportText(block.heading)}</h3>` : ""}<div class="llm-block-body">${renderReportBody(block.text)}</div></section>`
+      ).join("");
+      return `<div class="llm-report-meta muted">本次使用模型：${esc(modelLabel)}</div>${highlightHtml}<div class="llm-report-sections">${sections}</div>`;
+    }
+
+    function fmt(value, digits=2) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) return "-";
+      return Number(value).toFixed(digits);
+    }
+
+    function pct(value) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) return "-";
+      const cls = Number(value) > 0 ? "up" : Number(value) < 0 ? "down" : "";
+      return `<span class="${cls}">${fmt(value)}%</span>`;
+    }
+
+    function label(row, key) {
+      return esc(row[key] || "→0");
+    }
+
+    function leaderStockCell(row, role) {
+      const name = row && row[role];
+      if (!name) return `<span class="muted">读取中…</span>`;
+      const code = row[`${role}_code`];
+      const pctValue = row[`${role}_pct_change`];
+      const pctText = role === "leading_stock" && pctValue !== null && pctValue !== undefined && Number.isFinite(Number(pctValue))
+        ? `涨幅 ${fmt(pctValue)}%`
+        : "";
+      const basis = role === "leader_stock" ? row.leader_stock_basis || "" : pctText;
+      const title = [code, basis].filter(Boolean).join("｜") || name;
+      return `<span class="stock-cell" title="${esc(title)}">${esc(name)}${code ? `<small>${esc(code)}</small>` : ""}${basis ? `<small>${esc(basis)}</small>` : ""}</span>`;
+    }
+
+    function miniTable(rows, fields) {
+      if (!rows || !rows.length) return `<span class="muted">暂无符合条件的数据</span>`;
+      return `<div class="mini-table-wrap"><table class="mini-table"><thead><tr><th>板块</th>${fields.map(f => `<th>${esc(f.label)}</th>`).join("")}</tr></thead><tbody>` +
+        rows.slice(0, 20).map(row => `<tr class="selectable-row" data-sector-code="${esc(row.sector_code || "")}" title="点击高亮此行，再次点击取消"><td>${esc(row.sector_name || row.sector_code)}</td>` +
+          fields.map(f => `<td data-field="${esc(f.key)}">${f.render ? f.render(row[f.key], row) : esc(row[f.key])}</td>`).join("") +
+        `</tr>`).join("") + `</tbody></table></div>`;
+    }
+
+    function renderHistory(module) {
+      const dates = module.dates || [];
+      const rows = module.rows || [];
+      if (!rows.length) {
+        $("historyTable").innerHTML = `<span class="muted">暂无历史数据</span>`;
+        return;
+      }
+      const headers = dates.map(date => `<th>${esc(date.slice(5))}</th>`).join("");
+      const baselineDate = module.rank_change_3d_baseline_date || "";
+      const movementTitle = module.rank_change_3d_definition || "最近3个交易日第一天到最新一天的名次变化";
+      const body = rows.map(row => {
+        const cells = dates.map(date => {
+          const cell = row.history && row.history[date];
+          if (!cell) return `<td class="history-cell muted">—</td>`;
+          return `<td class="history-cell"><b>#${esc(cell.rank)}</b> ${esc(cell.rank_change_2d_label || "")}` +
+            `<br><span class="muted">RPS ${fmt(cell.rps50)}｜收盘 ${fmt(cell.close)}｜涨幅 ${pct(cell.pct_change)}</span>` +
+            `<br><span class="muted">额 ${cell.amount == null ? "-" : Number(cell.amount).toLocaleString()}</span></td>`;
+        }).join("");
+        const movementValue = row.rank_change_3d;
+        const movement = movementValue === null || movementValue === undefined ? NaN : Number(movementValue);
+        const movementClass = Number.isFinite(movement) ? movement > 0 ? "up" : movement < 0 ? "down" : "muted" : "muted";
+        const movementLabel = row.rank_change_3d_label || "—";
+        const movementHint = baselineDate ? `相对 ${baselineDate}：${movementTitle}` : movementTitle;
+        const movementCell = `<td class="rank-movement-cell ${movementClass}" title="${esc(movementHint)}">${esc(movementLabel)}` +
+          `<span class="muted">${baselineDate ? `对比 ${esc(baselineDate.slice(5))}` : "数据不足"}</span></td>`;
+        const sectorCode = row.sector_code || "";
+        const sectorName = row.sector_name || sectorCode;
+        return `<tr class="selectable-row" data-sector-code="${esc(sectorCode)}" title="点击高亮此行，再次点击取消"><td class="history-rank-col">${esc(row.rank)}</td><td class="history-sector-col"><button type="button" class="history-sector-link" data-sector-code="${esc(sectorCode)}" data-sector-name="${esc(sectorName)}" title="点击查看 ${esc(sectorName)} 的股票和 ETF">${esc(sectorName)}</button></td>${cells}${movementCell}</tr>`;
+      }).join("");
+      $("historyTable").innerHTML = `<table><thead><tr><th class="history-rank-col">最新排名</th><th class="history-sector-col">板块</th>${headers}<th title="${esc(movementTitle)}">最近3天名次变动</th></tr></thead><tbody>${body}</tbody></table>`;
+      if ($("historySectorSearch")?.value.trim()) window.setTimeout(findHistorySector, 0);
+    }
+
+    function findHistorySector() {
+      const input = $("historySectorSearch");
+      const status = $("historySectorSearchStatus");
+      if (!input || !status) return;
+      const query = input.value.trim().toLocaleLowerCase();
+      const rows = Array.from(document.querySelectorAll("#historyTable tbody tr.selectable-row"));
+      rows.forEach(row => row.classList.remove("is-selected"));
+      if (!query) {
+        status.textContent = "输入板块名后会自动定位。";
+        return;
+      }
+      const candidates = rows.map(row => ({
+        row,
+        name: (row.querySelector(".history-sector-col")?.textContent || "").trim(),
+        code: (row.dataset.sectorCode || "").trim()
+      }));
+      const target = candidates.find(item => item.name.toLocaleLowerCase() === query || item.code.toLocaleLowerCase() === query)
+        || candidates.find(item => item.name.toLocaleLowerCase().includes(query) || item.code.toLocaleLowerCase().includes(query));
+      if (!target) {
+        status.textContent = `未找到板块：${input.value.trim()}`;
+        return;
+      }
+      target.row.classList.add("is-selected");
+      target.row.scrollIntoView({behavior:"smooth", block:"center", inline:"nearest"});
+      status.textContent = `已定位：${target.name}${target.code ? `（${target.code}）` : ""}`;
+    }
+
+    function formatConstituentNumber(value, digits=2) {
+      if (value === null || value === undefined || value === "" || Number.isNaN(Number(value))) return "-";
+      return Number(value).toLocaleString(undefined, {maximumFractionDigits:digits});
+    }
+
+    function renderConstituents(data) {
+      const rows = Array.isArray(data.rows) ? data.rows : [];
+      if (!rows.length) return `<span class="muted">该板块暂时没有返回成分股。</span>`;
+      const body = rows.map(row => {
+        const type = String(row.security_type || "股票");
+        const typeClass = type === "ETF" ? "security-etf" : "security-stock";
+        const pctValue = row.pct_change;
+        const pctClass = Number(pctValue) > 0 ? "up" : Number(pctValue) < 0 ? "down" : "";
+        return `<tr><td><span class="${typeClass}">${esc(type)}</span></td><td>${esc(row.code || "-")}</td><td>${esc(row.name || "-")}</td><td><span class="${pctClass}">${formatConstituentNumber(pctValue)}${pctValue === null || pctValue === undefined || pctValue === "" ? "" : "%"}</span></td><td>${formatConstituentNumber(row.amount, 0)}</td><td>${formatConstituentNumber(row.market_cap, 0)}</td></tr>`;
+      }).join("");
+      return `<table><thead><tr><th>类型</th><th>代码</th><th>名称</th><th>涨跌幅</th><th>成交额</th><th>总市值</th></tr></thead><tbody>${body}</tbody></table>`;
+    }
+
+    async function loadHistoryConstituents(sectorCode, sectorName) {
+      const panel = $("historyConstituentPanel");
+      const title = $("historyConstituentTitle");
+      const status = $("historyConstituentStatus");
+      const table = $("historyConstituentTable");
+      if (!panel || !title || !status || !table) return;
+      const requestSerial = ++historyConstituentRequestSerial;
+      const name = sectorName || sectorCode || "当前板块";
+      panel.hidden = false;
+      title.textContent = `${name}：成分股和 ETF`;
+      status.textContent = "正在读取板块成分股，请稍候…";
+      table.innerHTML = `<span class="muted">读取中…</span>`;
+      panel.scrollIntoView({behavior:"smooth", block:"nearest"});
+      try {
+        const data = await api("/api/sector-constituents", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({sector_code:sectorCode, sector_name:sectorName, sector_type:activeSectorType(), provider:selectedProvider()})
+        });
+        if (requestSerial !== historyConstituentRequestSerial) return;
+        table.innerHTML = renderConstituents(data);
+        const warning = Array.isArray(data.warnings) && data.warnings.length ? `；${data.warnings[0]}` : "";
+        status.textContent = `共 ${data.count || 0} 只证券：股票 ${data.stock_count || 0}，ETF ${data.etf_count || 0}；来源：${data.source || "公开行情接口"}${warning}`;
+      } catch (error) {
+        if (requestSerial !== historyConstituentRequestSerial) return;
+        table.innerHTML = `<span class="error">${esc(error.message)}</span>`;
+        status.textContent = "读取失败；不会影响历史排名表。";
+      }
+    }
+
+    function installRowSelection() {
+      document.addEventListener("click", event => {
+        const target = event.target instanceof Element ? event.target : null;
+        const dualClose = target?.closest(".dual-constituent-close");
+        if (dualClose) {
+          const panelKey = dualClose.dataset.dualPanel || "";
+          if (panelKey) {
+            dualConstituentRequestSerial[panelKey]++;
+            const panel = $(`dual-${panelKey}-constituentPanel`);
+            if (panel) panel.hidden = true;
+          }
+          return;
+        }
+        const sectorLink = target?.closest(".history-sector-link");
+        if (sectorLink) {
+          event.preventDefault();
+          if (sectorLink.dataset.dualPanel) {
+            loadDualHistoryConstituents(
+              sectorLink.dataset.dualPanel,
+              sectorLink.dataset.sectorCode || "",
+              sectorLink.dataset.sectorName || sectorLink.textContent || "",
+              sectorLink.dataset.provider || "",
+              sectorLink.dataset.sectorType || ""
+            );
+          } else {
+            loadHistoryConstituents(sectorLink.dataset.sectorCode || "", sectorLink.dataset.sectorName || sectorLink.textContent || "");
+          }
+          return;
+        }
+        const row = target?.closest("tbody tr.selectable-row");
+        if (!row) return;
+        const table = row.closest("table");
+        if (!table) return;
+        const selected = row.classList.contains("is-selected");
+        table.querySelectorAll("tbody tr.selectable-row.is-selected").forEach(item => item.classList.remove("is-selected"));
+        if (!selected) row.classList.add("is-selected");
+      });
+    }
+
+    async function loadSectorLeaders(report, rows, tableId, statusId) {
+      const requestSerial = ++sectorLeaderRequestSerial[tableId];
+      const isCurrent = () => requestSerial === sectorLeaderRequestSerial[tableId] && currentReport === report;
+      const status = $(statusId);
+      if (!rows.length) {
+        status.textContent = "领涨股按板块成分股最新涨跌幅；暂无可补充的板块。";
+        return;
+      }
+      status.textContent = "正在读取板块成分股，稍候补充领涨股…";
+      try {
+        const data = await api("/api/sector-leaders", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            sector_type: report.sector_type,
+            provider: selectedProvider(),
+            sectors: rows.slice(0, 20).map(row => ({sector_code: row.sector_code, sector_name: row.sector_name || row.sector_code}))
+          })
+        });
+        if (!isCurrent()) return;
+        const tableRows = Array.from(document.querySelectorAll(`#${tableId} tbody tr.selectable-row`));
+        (data.leaders || []).forEach(item => {
+          const row = tableRows.find(node => node.dataset.sectorCode === String(item.sector_code));
+          if (!row) return;
+          ["leading_stock"].forEach(key => {
+            const cell = row.querySelector(`[data-field="${key}"]`);
+            if (cell) cell.innerHTML = leaderStockCell(item, key);
+          });
+        });
+        const successCount = (data.leaders || []).length;
+        status.textContent = data.warnings?.length
+          ? `已补充 ${successCount} 个板块；部分板块暂时没有可用成分股行情。领涨股按板块成分股最新涨跌幅。`
+          : `已补充 ${successCount} 个板块的领涨股；按板块成分股最新涨跌幅。`;
+        tableRows.forEach(row => {
+          row.querySelectorAll('[data-field="leading_stock"]').forEach(cell => {
+            if (cell.textContent?.includes("读取中")) cell.innerHTML = `<span class="muted">—</span>`;
+          });
+        });
+      } catch (error) {
+        if (!isCurrent()) return;
+        status.textContent = `领涨股暂时读取失败：${error.message}；不影响主榜数据。`;
+        document.querySelectorAll(`#${tableId} [data-field="leading_stock"]`).forEach(cell => {
+          cell.innerHTML = `<span class="muted">—</span>`;
+        });
+      }
+    }
+
+    function activeFormulaDefinition() {
+      const id = Number(activeFormulaId || $("formulaSelect")?.value || 0);
+      return formulaDefinitions.find(item => Number(item.id) === id) || null;
+    }
+
+    function updateFormulaControls() {
+      const definition = activeFormulaDefinition();
+      const button = $("deleteFormulaBtn");
+      if (!button) return;
+      if (!definition) {
+        button.disabled = true;
+        button.textContent = "删除公式";
+        button.title = "请先选择一个已保存的自定义公式";
+      } else if (definition.is_builtin) {
+        button.disabled = true;
+        button.textContent = "内置公式不可删除";
+        button.title = "内置公式用于保留默认策略；如需修改，请点击“新建公式”另存为副本";
+      } else {
+        button.disabled = false;
+        button.textContent = "删除公式";
+        button.title = `删除自定义公式“${definition.name}”`;
+      }
+    }
+
+    function renderFormulaDefinitions(preferredId=null) {
+      const select = $("formulaSelect");
+      if (!select) return;
+      select.innerHTML = `<option value="">（新建公式）</option>` + formulaDefinitions.map(item =>
+        `<option value="${esc(item.id)}">${esc(item.name)}${item.is_builtin ? "（内置）" : ""}</option>`
+      ).join("");
+      const preferred = preferredId ?? activeFormulaId ?? formulaDefinitions[0]?.id;
+      activeFormulaId = formulaDefinitions.some(item => Number(item.id) === Number(preferred)) ? Number(preferred) : null;
+      if (activeFormulaId !== null) {
+        select.value = String(activeFormulaId);
+        const definition = activeFormulaDefinition();
+        $("formulaName").value = definition?.name || "";
+        $("formulaInput").value = definition?.formula || "";
+      } else {
+        select.value = "";
+        $("formulaName").value = "";
+        $("formulaInput").value = "";
+      }
+      updateFormulaControls();
+    }
+
+    async function loadFormulaLibrary(preferredId=null) {
+      const data = await api("/api/formulas");
+      formulaDefinitions = Array.isArray(data.formulas) ? data.formulas : [];
+      renderFormulaDefinitions(preferredId);
+    }
+
+    async function saveCurrentFormula(showStatus=true) {
+      const name = $("formulaName").value.trim();
+      const formula = $("formulaInput").value.trim();
+      if (!name) throw new Error("请先填写公式名称");
+      if (!formula) throw new Error("公式内容不能为空");
+      const existing = activeFormulaDefinition();
+      const changed = !existing || existing.name !== name || existing.formula !== formula;
+      if (existing?.is_builtin && !changed) return existing;
+      const id = existing && (!existing.is_builtin || !changed) ? Number(existing.id) : null;
+      const data = await api("/api/formulas", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id, name, formula})
+      });
+      await loadFormulaLibrary(data.formula.id);
+      if (showStatus) $("formulaStatus").textContent = `公式“${data.formula.name}”已保存，可直接开始选股。`;
+      return data.formula;
+    }
+
+    function renderFormulaRuns(preferredId=null) {
+      const select = $("formulaRunSelect");
+      if (!select) return;
+      select.innerHTML = `<option value="">（请选择历史选股结果）</option>` + formulaRuns.map(run => {
+        const count = Number(run.fundamental_verified || 0);
+        const time = String(run.created_at || "").replace("T", " ").replace("+00:00", "");
+        return `<option value="${esc(run.id)}">${esc(run.formula_name)}｜${esc(run.timeframe)}｜${esc(time)}｜选出 ${count} 个</option>`;
+      }).join("");
+      const selectedId = preferredId ?? formulaRuns[0]?.id ?? "";
+      select.value = selectedId ? String(selectedId) : "";
+      updateFormulaRunControls();
+    }
+
+    function updateFormulaRunControls() {
+      const runId = Number($("formulaRunSelect")?.value || 0);
+      $("loadFormulaRunBtn").disabled = !runId;
+      $("deleteFormulaRunBtn").disabled = !runId;
+    }
+
+    async function loadFormulaRuns(preferredId=null) {
+      const data = await api("/api/formula-runs?limit=100");
+      formulaRuns = Array.isArray(data.runs) ? data.runs : [];
+      renderFormulaRuns(preferredId);
+      if (!formulaRuns.length) $("formulaRunStatus").textContent = "还没有保存的选股结果。";
+    }
+
+    async function viewFormulaRun() {
+      const runId = Number($("formulaRunSelect").value || 0);
+      if (!runId) {
+        $("formulaRunStatus").textContent = "请先选择一条历史选股结果。";
+        return;
+      }
+      const data = await api(`/api/formula-runs/${runId}`);
+      const run = data.run || {};
+      const result = run.result || {};
+      renderFormulaResults({...result, formula_name:run.formula_name, run_id:run.id});
+      $("formulaRunStatus").textContent = `已载入“${run.formula_name}”的历史结果；保存时间 ${String(run.created_at || "").replace("T", " ")}`;
+      $("formulaStatus").textContent = `当前查看历史选股结果：${run.formula_name}（${run.timeframe}）`;
+    }
+
+    async function deleteFormulaRun() {
+      const select = $("formulaRunSelect");
+      const runId = Number(select?.value || 0);
+      const run = formulaRuns.find(item => Number(item.id) === runId);
+      if (!runId || !run) {
+        $("formulaRunStatus").textContent = "请先选择一条历史选股结果。";
+        return;
+      }
+      if (!window.confirm(`确定删除“${run.formula_name}｜${run.timeframe}｜${String(run.created_at || "").replace("T", " ")}` + "”这条选股结果吗？删除后不会影响公式和行情数据。")) return;
+      const button = $("deleteFormulaRunBtn");
+      button.disabled = true;
+      button.classList.add("is-busy");
+      button.textContent = "删除中…";
+      try {
+        await api(`/api/formula-runs/${runId}`, {method:"DELETE"});
+        formulaRuns = formulaRuns.filter(item => Number(item.id) !== runId);
+        renderFormulaRuns();
+        $("formulaResults").innerHTML = `<span class="muted">已删除这条选股结果。</span>`;
+        $("formulaRunStatus").textContent = `已删除“${run.formula_name}”的历史选股结果；公式本身仍然保留。`;
+      } catch (error) {
+        $("formulaRunStatus").innerHTML = `<span class="error">删除失败：${esc(error.message)}</span>`;
+      } finally {
+        button.classList.remove("is-busy");
+        updateFormulaRunControls();
+      }
+    }
+
+    function renderFormulaResults(data) {
+      const rows = Array.isArray(data.rows) ? data.rows : [];
+      const summary = data.scan_status || {};
+      const dates = Object.keys(data.file_latest_dates || {}).sort();
+      const warning = (data.warnings || []).map(esc).join("<br>");
+      const overview = `<div class="notice">范围：${esc(data.security_scope || "本地历史记录")}；实际数据日期：${esc(dates.length ? dates.join("、") : "见每行日期")}。<br>历史不足/不可计算：${esc(summary.insufficient_history || 0)}；读取/执行失败：${esc(summary.read_failed || 0)}；条件不命中：${esc(summary.no_match || 0)}；财务未判定：${esc(data.fundamental_unknown_count || 0)}。${warning ? `<br>${warning}` : ""}</div>`;
+      if (!rows.length) {
+        $("formulaResults").innerHTML = overview+`<span class="muted">暂无可展示结果。${(summary.insufficient_history || summary.read_failed || data.fundamental_unknown_count) ? "存在数据不足或失败，请先检查上述状态；不能认定全部股票均不符合条件。" : "已成功计算的股票未满足条件。"}</span>`;
+        return;
+      }
+      const timeframeLabel = data.timeframe_label || "周期";
+      const body = rows.map(row => {
+        const pctValue = row.period_pct_change ?? row.weekly_pct_change;
+        const pctClass = Number(pctValue) > 0 ? "up" : Number(pctValue) < 0 ? "down" : "";
+        return `<tr><td><b>${esc(row.code || "-")}</b></td><td>${esc(row.name || "-")}</td><td>${esc(row.latest_date || "-")}</td><td>${fmt(row.close)}</td><td>${fmt(row.obv_angle)}</td><td>${fmt(row.funds)}</td><td><span class="${pctClass}">${fmt(pctValue)}${pctValue === null || pctValue === undefined ? "" : "%"}</span></td><td>${esc(row.fundamental_status || "-")}</td></tr>`;
+      }).join("");
+      $("formulaResults").innerHTML = overview+`<table><thead><tr><th>代码</th><th>名称</th><th>${esc(timeframeLabel)}日期</th><th>收盘价</th><th>OBV角度</th><th>资金</th><th>${esc(timeframeLabel)}涨跌幅</th><th>基本面</th></tr></thead><tbody>${body}</tbody></table>`;
+    }
+
+    async function runFormulaScreen() {
+      const button = $("formulaScreenBtn");
+      const status = $("formulaStatus");
+      const results = $("formulaResults");
+      if (!button || !status || !results) return;
+      button.disabled = true;
+      const timeframe = $("formulaTimeframe")?.value || "weekly";
+      const timeframeLabel = $("formulaTimeframe")?.selectedOptions?.[0]?.textContent || "周线";
+      status.textContent = "正在保存公式…";
+      results.innerHTML = `<span class="muted">正在准备公式，请稍候…</span>`;
+      try {
+        const formula = await saveCurrentFormula(false);
+        status.textContent = `正在读取通达信${timeframeLabel}数据并选股，首次扫描可能需要一点时间…`;
+        results.innerHTML = `<span class="muted">扫描中…</span>`;
+        const maxResults = Math.max(1, Math.min(300, Number($("formulaMaxResults").value) || 100));
+        const data = await api("/api/formula-screen", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({formula_id:formula.id, timeframe, max_results:maxResults, provider:selectedProvider()})
+        });
+        activeFormulaId = Number(data.formula_id || formula.id);
+        renderFormulaResults(data);
+        const warning = Array.isArray(data.warnings) && data.warnings.length ? `；${data.warnings.join("；")}` : "";
+        const sourceText = data.data_source ? `，数据源：${data.data_source}` : "";
+        status.textContent = `公式“${data.formula_name || formula.name}”已保存并执行：扫描 ${data.scanned_count || 0} 个本地${timeframeLabel}文件，技术条件命中 ${data.technical_candidates || 0} 个，最终选出 ${data.fundamental_verified || 0} 个${sourceText}${warning}`;
+        $("formulaRunStatus").textContent = `本次结果已自动保存（记录 ${data.run_id}）；清空本地行情数据不会删除它。`;
+        await loadFormulaRuns(data.run_id);
+      } catch (error) {
+        results.innerHTML = `<span class="error">${esc(error.message)}</span>`;
+        status.textContent = "公式选股未完成。";
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    function renderGroups(report) {
+      const module = report.modules.t_groups || {};
+      const groups = module.groups || {};
+      $("groups").innerHTML = ["T0","T1","T2"].map(name => {
+        const rows = groups[name] || [];
+        const names = rows.slice(0, 20).map(row => `<span class="tag">${esc(row.sector_name || row.sector_code)} #${esc(row.rank)} RPS ${fmt(row.rps50)}</span>`).join("");
+        return `<h3>${name}（${rows.length}）</h3><div>${names || `<span class="muted">暂无</span>`}</div><div class="rule">${esc((module.rules || {})[name] || "")}</div>`;
+      }).join("");
+    }
+
+    function renderTrend(report) {
+      const trend = report.modules.trend || {};
+      const breadth = trend.breadth || {};
+      const risks = trend.risk_flags || [];
+      $("trend").innerHTML = `<div class="status-panel">` +
+        `<span>上涨 <b>${esc(breadth.rising)}</b></span><span>下跌 <b>${esc(breadth.falling)}</b></span><span>平盘 <b>${esc(breadth.flat)}</b></span>` +
+        `<span>中位涨跌幅 <b>${fmt(trend.median_pct_change)}%</b></span><span>单日前进榜 <b>${esc(trend.daily_up_count)}</b></span><span>单日走弱榜 <b>${esc(trend.daily_down_count)}</b></span></div>` +
+        `<p><b>${esc(trend.headline || "")}</b></p>` +
+        `<p>${(trend.observations || []).map(item => `<span class="tag">${esc(item)}</span>`).join("")}</p>` +
+        `<p>RPS50 靠前：${(trend.top_rps_sectors || []).map(item => `<span class="tag">${esc(item)}</span>`).join("") || "-"}</p>` +
+        `<p>5日排名前进：${(trend.top_5d_advance_sectors || []).map(item => `<span class="tag">${esc(item)}</span>`).join("") || "-"}</p>` +
+        `${risks.length ? `<p>风险标记：${risks.map(item => `<span class="tag warn">${esc(item)}</span>`).join("")}</p>` : ""}` +
+        `<p class="muted">${esc(trend.caution || "")}</p>`;
+    }
+
+    function renderStrategy(report) {
+      const strategy = report.modules.strategy || {};
+      $("strategy").innerHTML = `<p class="notice">${esc(strategy.disclaimer || "")}</p>` +
+        (strategy.buckets || []).map(bucket => `<div class="bucket"><div class="bucket-title"><span>${esc(bucket.name)}</span><span>${esc(bucket.reference_percent)}%</span></div>` +
+          `<div>${(bucket.sectors || []).map(item => `<span class="tag">${esc(item)}</span>`).join("") || `<span class="muted">暂无指定板块</span>`}</div>` +
+          `<div class="rule">${esc(bucket.rule || "")}</div></div>`).join("") +
+        `<h3>下一交易日验证条件</h3><ul>${(strategy.validation_next_day || []).map(item => `<li>${esc(item)}</li>`).join("")}</ul>` +
+        `<h3>应避免的动作</h3><ul>${(strategy.avoid_actions || []).map(item => `<li>${esc(item)}</li>`).join("")}</ul>`;
+    }
+
+    function renderReport(report) {
+      currentReport = report;
+      renderReportDateOptions(report);
+      const modules = report.modules || {};
+      const status = report.data_status || {};
+      const window = report.data_window || {};
+      const warnings = [...(status.warnings || [])];
+      const ignoredDates = status.newer_dates_ignored || [];
+      if (ignoredDates.length) {
+        warnings.unshift(`较新的 ${ignoredDates.join("、")} 数据覆盖不足，当前自动展示 ${report.report_date}；可在日期下拉框手动查看。`);
+      }
+      $("dataStatus").innerHTML = `<div class="status-panel"><span>报告日期：<b>${esc(report.report_date)}</b></span>` +
+        `<span>行情来源：<b>${esc(providerLabel(report.dataset_id || selectedProvider()))}</b></span>` +
+        `<span>该来源最新日期：<b>${esc(status.latest_available_date || report.report_date)}</b></span>` +
+        `<span>范围：<b>${esc(typeLabel(report.sector_type))}</b></span>` +
+        `<span>板块：<b>${esc(window.sector_count)}</b>/${esc(window.normal_sector_count)}</span>` +
+        `<span>历史：<b>${esc(status.history_dates_available)}</b>/${esc(status.history_dates_required)}</span>` +
+        `<span>排名来源：<b>${status.rank_mode === "source_snapshot" ? "结构化快照" : status.rank_mode === "mixed" ? "快照+本地混合" : "本地计算"}</b></span>` +
+        `<span>前一交易日：${esc(window.previous_date)}</span><span>5日起点：${esc(window.five_day_start)}</span></div>` +
+        `${warnings.length ? `<ul class="warning-list">${warnings.map(item => `<li>${esc(item)}</li>`).join("")}</ul>` : `<span>当前数据覆盖正常。</span>`}`;
+      const historyModule = modules.historical_top100 || {};
+      const baselineText = historyModule.rank_change_3d_baseline_date ? `，最后一列对比 ${historyModule.rank_change_3d_baseline_date}` : "，最近3天数据不足时显示 —";
+      $("historyMeta").textContent = `表格共 ${historyModule.row_count || 0} 行；日期单元格依次展示排名、RPS50、收盘价、涨跌幅和成交额${baselineText}。`;
+      renderHistory(historyModule);
+      $("dailyUp").innerHTML = miniTable((modules.daily_up || {}).rows, [
+        {key:"rank_change_1d_label",label:"名次变化",render:(v,r)=>label(r,"rank_change_1d_label")},
+        {key:"rps_change_1d",label:"RPS变化",render:fmt}, {key:"pct_change",label:"涨幅",render:pct}, {key:"rank",label:"现排名",render:v=>esc(v)}
+      ]);
+      $("dailyDown").innerHTML = miniTable((modules.daily_down || {}).rows, [
+        {key:"rank_change_1d_label",label:"名次变化",render:(v,r)=>label(r,"rank_change_1d_label")},
+        {key:"rps_change_1d",label:"RPS变化",render:fmt}, {key:"pct_change",label:"涨幅",render:pct}, {key:"rank",label:"现排名",render:v=>esc(v)}
+      ]);
+      $("fiveUp").innerHTML = miniTable((modules.five_day_up || {}).rows, [
+        {key:"rank_change_5d_label",label:"名次变化",render:(v,r)=>label(r,"rank_change_5d_label")},
+        {key:"rps_change_5d",label:"RPS变化",render:fmt}, {key:"return_5d",label:"5日涨幅",render:pct}, {key:"rank",label:"现排名",render:v=>esc(v)}
+      ]);
+      $("fiveDown").innerHTML = miniTable((modules.five_day_down || {}).rows, [
+        {key:"rank_change_5d_label",label:"名次变化",render:(v,r)=>label(r,"rank_change_5d_label")},
+        {key:"rps_change_5d",label:"RPS变化",render:fmt}, {key:"return_5d",label:"5日涨幅",render:pct}, {key:"rank",label:"现排名",render:v=>esc(v)}
+      ]);
+      const fiveTop100Rows = (modules.five_day_top100_up || {}).rows || [];
+      $("fiveTop100Up").innerHTML = miniTable(fiveTop100Rows, [
+        {key:"rank_change_5d_label",label:"名次变化",render:(v,r)=>label(r,"rank_change_5d_label")},
+        {key:"rps_change_5d",label:"RPS变化",render:fmt}, {key:"return_5d",label:"5日涨幅",render:pct}, {key:"rank",label:"现排名",render:v=>esc(v)},
+        {key:"leading_stock",label:"领涨股",render:(_,r)=>leaderStockCell(r,"leading_stock")}
+      ]);
+      void loadSectorLeaders(report, fiveTop100Rows, "fiveTop100Up", "fiveTop100LeaderStatus");
+      const tenDayModule = modules.ten_day_six_up || modules.five_day_consecutive_up || modules.ten_day_consecutive_up || {};
+      const tenDayRows = tenDayModule.rows || [];
+      const tenDayFields = [
+        {key:"up_days_10d_label",label:"前进天数",render:(v,r)=>esc(r.up_days_10d_label || `${r.up_days_10d ?? 0}天`)},
+        {key:"rank_change_10d_label",label:"累计名次变化",render:(v,r)=>label(r,"rank_change_10d_label")},
+        {key:"rank_path_10d",label:"10日名次轨迹",render:v=>esc(v || "-")},
+        {key:"rps_change_10d",label:"RPS变化",render:fmt}, {key:"return_10d",label:"10日涨幅",render:pct}, {key:"rank",label:"现排名",render:v=>esc(v)},
+        {key:"leading_stock",label:"领涨股",render:(_,r)=>leaderStockCell(r,"leading_stock")}
+      ];
+      if (tenDayRows.length) {
+        $("tenDaySixUp").innerHTML = miniTable(tenDayRows, tenDayFields);
+        void loadSectorLeaders(report, tenDayRows, "tenDaySixUp", "tenDayLeaderStatus");
+      } else {
+        sectorLeaderRequestSerial.tenDaySixUp++;
+        const requiredDays = Number(tenDayModule.required_days || 10);
+        const availableDays = Number(tenDayModule.available_days || 0);
+        const minAdvanceDays = Number(tenDayModule.min_advance_days || 6);
+        const emptyHint = availableDays < requiredDays
+          ? `数据不足：当前只有 ${availableDays} 个可用交易日，需要 ${requiredDays} 个交易日。`
+          : `最近10个交易日没有板块达到至少${minAdvanceDays}天名次前进。`;
+        $("tenDaySixUp").innerHTML = `<span class="muted">${esc(emptyHint)}</span>`;
+      }
+      renderGroups(report);
+      renderTrend(report);
+      renderStrategy(report);
+      $("heroReportDate").textContent = report.report_date || "—";
+      $("heroCoverage").textContent = `${window.sector_count || 0}/${window.normal_sector_count || 0}`;
+      $("heroMarketState").textContent = (modules.strategy || {}).market_state || "—";
+      $("status").textContent = `${typeLabel(report.sector_type)}报告：${report.report_date}｜本地报告包含 ${window.sector_count} 个板块｜历史 ${status.history_dates_available}/${status.history_dates_required} 日`;
+    }
+
+    function quoteChange(value, suffix="") {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) return "-";
+      const number = Number(value);
+      const cls = number > 0 ? "quote-up" : number < 0 ? "quote-down" : "";
+      return `<span class="${cls}">${number.toFixed(2)}${suffix}</span>`;
+    }
+
+    function flowAmount(value) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) return "-";
+      const number = Number(value);
+      const absolute = Math.abs(number);
+      const unitValue = absolute >= 100000000
+        ? `${(number / 100000000).toFixed(2)}亿`
+        : absolute >= 10000
+          ? `${(number / 10000).toFixed(2)}万`
+          : `${number.toFixed(0)}元`;
+      const cls = number > 0 ? "flow-in" : number < 0 ? "flow-out" : "flow-flat";
+      const prefix = number > 0 ? "+" : "";
+      return `<span class="${cls}">${prefix}${unitValue}</span>`;
+    }
+
+    function flowRatio(value) {
+      if (value === null || value === undefined || Number.isNaN(Number(value))) return "-";
+      const number = Number(value);
+      const cls = number > 0 ? "flow-in" : number < 0 ? "flow-out" : "flow-flat";
+      const prefix = number > 0 ? "+" : "";
+      return `<span class="${cls}">${prefix}${number.toFixed(2)}%</span>`;
+    }
+
+    function localDateInputValue() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    }
+
+    async function clearCapitalFlowData() {
+      const buttons = ["clearCapitalFlowBtn", "confirmClearCapitalFlowBtn", "cancelClearCapitalFlowBtn", "currentFlowRefresh", "refreshCapitalFlowBtn", "refreshCapitalFlowOnlineBtn", "retryCapitalFlowBtn"];
+      if (["currentFlowRefresh", "refreshCapitalFlowBtn"].some(id => $(id).disabled)) {
+        $("currentFlowStatus").textContent = "资金流向正在查询，请等待完成后再清空。";
+        return;
+      }
+      buttons.forEach(id => $(id).disabled = true);
+      try {
+        const result = await api("/api/sector-capital-flow/clear", {method: "POST"});
+        $("currentFlowTable").innerHTML = "";
+        $("capitalFlowTable").innerHTML = "";
+        localStorage.removeItem("gupiao.capitalFlowDate");
+        $("capitalFlowDate").value = localDateInputValue();
+        $("currentFlowStatus").textContent = `已清空 ${result.deleted_rows} 条资金流向记录。请点击“刷新当前资金流向”重新联网测试。${result.backup_path ? `清空前备份：${result.backup_path}` : ""}`;
+        $("capitalFlowStatus").textContent = "历史资金流向缓存已清空；历史查询需单独读取，不影响当前榜。";
+        $("clearCapitalFlowConfirm").hidden = true;
+      } catch (error) {
+        $("currentFlowStatus").textContent = `清空未成功：${error.message}`;
+      } finally { buttons.forEach(id => $(id).disabled = false); }
+    }
+
+    async function loadCurrentFlow(refresh=false) {
+      const button = $("currentFlowRefresh");
+      button.disabled = true;
+      try {
+        const outcomes = await Promise.all(selectedSectorTypes().map(async type => {
+          try {
+            return {type, data: await api(`/api/sector-capital-flow/current${refresh ? "" : "/cache"}?sector_type=${encodeURIComponent(type)}&limit=${$("currentFlowLimit").value}`)};
+          } catch (error) { return {type, error}; }
+        }));
+        const notices = [];
+        const panels = [];
+        for (const item of outcomes) {
+          if (!item.data) { notices.push(`${typeLabel(item.type)}：${item.error.message}`); continue; }
+          const data = item.data;
+          const rows = data.rows || [];
+          panels.push(`<section class="capital-flow-panel"><h3>${esc(typeLabel(item.type))}｜当前主力净流入榜</h3><p class="muted">${data.cached ? "本地保存快照" : "联网读取"}；来源 ${esc(data.source)}；数据时间 ${esc(data.updated_at || "未知")}；共 ${esc(data.total)} 个板块（显示 ${rows.length} 个）。${esc(data.close_status || "数据日期未确认")}；收盘归档日期 ${esc(data.confirmed_trade_date || "未确认")}，归档 ${esc(data.closed_rows_saved || 0)} 个板块。</p><div class="capital-flow-table"><table><thead><tr><th>排名</th><th>板块</th><th>涨跌幅</th><th>主力净流入</th><th>主力净占比</th><th>超大单</th><th>大单</th><th>中单</th><th>小单</th></tr></thead><tbody>${rows.map(row => `<tr><td>${esc(row.rank)}</td><td>${esc(row.sector_name)}<small>${esc(row.sector_code)}</small></td><td>${quoteChange(row.pct_change,"%")}</td><td>${flowAmount(row.main_net_inflow)}</td><td>${flowRatio(row.main_net_ratio)}</td><td>${flowAmount(row.super_large_net_inflow)}</td><td>${flowAmount(row.large_net_inflow)}</td><td>${flowAmount(row.medium_net_inflow)}</td><td>${flowAmount(row.small_net_inflow)}</td></tr>`).join("")}</tbody></table></div></section>`);
+          if (data.refresh_error) notices.push(`${typeLabel(item.type)}刷新失败，保留旧快照：${data.refresh_error}`);
+        }
+        if (panels.length) $("currentFlowTable").innerHTML = panels.join("");
+        $("currentFlowStatus").textContent = notices.join("；") || (refresh ? "当前榜读取完成，已保存在本机。" : "已恢复本机保存的当前榜。");
+        // Cache-only update of the lower panel: never trigger history downloads.
+        if (refresh && outcomes.some(item => item.data?.closed_rows_saved > 0)) await restoreCapitalFlow();
+      } catch (error) {
+        $("currentFlowStatus").textContent = `读取失败，原结果仍保留：${error.message}`;
+      } finally { button.disabled = false; }
+    }
+
+    function renderCapitalFlowPanel(data) {
+      const rows = Array.isArray(data?.rows) ? data.rows : [];
+      const inflowRows = Array.isArray(data?.inflow_days_rank) ? data.inflow_days_rank : [];
+      const dailyBody = rows.map(row => `<tr>
+        <td>${esc(row.rank ?? "-")}</td>
+        <td><b>${esc(row.sector_name || "-")}</b><small class="muted">${esc(row.sector_code || "")}</small></td>
+        <td>${quoteChange(row.pct_change, "%")}</td>
+        <td>${flowAmount(row.main_net_inflow)}</td>
+        <td>${flowRatio(row.main_net_ratio)}</td>
+        <td>${flowAmount(row.super_large_net_inflow)}</td>
+        <td>${flowAmount(row.large_net_inflow)}</td>
+        <td>${flowAmount(row.medium_net_inflow)}</td>
+        <td>${flowAmount(row.small_net_inflow)}</td>
+      </tr>`).join("");
+      const inflowBody = inflowRows.map(row => `<tr>
+        <td>${esc(row.rank ?? "-")}</td>
+        <td><b>${esc(row.sector_name || "-")}</b><small class="muted">${esc(row.sector_code || "")}</small></td>
+        <td><b>${esc(row.positive_flow_days)}/10 天</b></td>
+        <td>${flowAmount(row.ten_day_main_net_inflow)}</td>
+        <td>${flowAmount(row.latest_main_net_inflow)}</td>
+      </tr>`).join("");
+      const coverage = data.history_coverage || {};
+      const firstDate = data.window_dates?.[0] || "—";
+      const lastDate = data.window_dates?.[data.window_dates.length - 1] || data.report_date || "—";
+      const emptyDaily = `<tr><td colspan="9" class="muted">所选日期没有可用的板块资金流向。</td></tr>`;
+      const imported = ["tdx_import", "ths_import"].includes(data.source_id);
+      const incomplete = data.window_complete === false || (!imported && data.catalog_complete === false) || Number(coverage.complete_boards || 0) < Number(coverage.requested_boards || 0) || Number(coverage.window_days || 0) < 10;
+      const emptyInflow = `<tr><td colspan="5" class="muted">${imported ? "此来源已导入范围内：" : ""}${incomplete ? "10日数据尚未完整，暂不能判断是否有板块符合条件；请补齐缺失数据。" : "10日数据完整，暂无符合“至少6天主力资金净流入”的板块。"}</td></tr>`;
+      const warnings = Array.isArray(data.warnings) ? data.warnings : [];
+      const warningHtml = warnings.length ? `<p class="notice" role="status">${warnings.map(esc).join("<br>")}</p>` : "";
+      const preview = data.preview;
+      const previewHtml = preview ? `<div class="capital-flow-rank-card"><h4>${esc(preview.date)} 今日盘中预览（非收盘）</h4><p>${esc(preview.note)} 更新时间 ${esc(preview.updated_at || "未知")}；共 ${esc(preview.total)} 个板块。</p><div class="capital-flow-table"><table><thead><tr><th>板块</th><th>主力净流入</th><th>涨跌幅</th></tr></thead><tbody>${(preview.rows || []).map(row => `<tr><td>${esc(row.sector_name)} ${esc(row.sector_code)}</td><td>${flowAmount(row.main_net_inflow)}</td><td>${quoteChange(row.pct_change, "%")}</td></tr>`).join("")}</tbody></table></div></div>` : "";
+      return `<section class="capital-flow-panel">
+        <h3>${esc(typeLabel(data.sector_type))}｜收盘历史实际交易日 ${esc(data.report_date || "暂无")}｜${esc(data.source || "东方财富")}</h3>
+        <p class="capital-flow-panel-meta">所选日期 ${esc(data.requested_date || "—")}；查询交易日 ${esc(data.resolved_date || data.requested_date || "—")}；单日覆盖 ${esc(coverage.daily_boards ?? rows.length)}/${esc(coverage.requested_boards ?? rows.length)} 个板块${data.daily_complete ? "（单日数据完整）" : "（仅展示实际取得的数据）"}。10日历史区间 ${esc(firstDate)} 至 ${esc(lastDate)}；10日完整覆盖 ${esc(coverage.complete_boards ?? 0)}/${esc(coverage.requested_boards ?? 0)} 个板块${incomplete ? "（10日数据未完整）" : ""}；本次历史读取失败 ${esc(coverage.failed_boards ?? 0)} 个。</p>
+        ${warningHtml}
+        ${(coverage.incomplete_samples || []).length ? `<p class="muted">数据不足示例：${coverage.incomplete_samples.map(row => `${esc(row.sector_name)} ${esc(row.available_days)}/10天`).join("；")}（仅列部分，不参加10日筛选）</p>` : ""}
+        ${previewHtml}
+        <div class="capital-flow-rank-grid">
+          <div class="capital-flow-rank-card"><h4>当日主力净流入榜</h4><p>仅对实际取得数据的板块排序；缺失板块不作为零流入参与排名。</p><div class="capital-flow-table"><table><thead><tr><th>排名</th><th>板块</th><th>涨跌幅</th><th>主力净流入</th><th>主力净占比</th><th>超大单</th><th>大单</th><th>中单</th><th>小单</th></tr></thead><tbody>${dailyBody || emptyDaily}</tbody></table></div></div>
+          <div class="capital-flow-rank-card"><h4>最近10天至少6天资金流入榜</h4><p>仅纳入10个交易日数据完整且主力净流入至少6天的板块，按流入天数及10日累计净额排序。</p><div class="capital-flow-table"><table><thead><tr><th>排名</th><th>板块</th><th>流入天数</th><th>10日主力净额</th><th>所选日净额</th></tr></thead><tbody>${inflowBody || emptyInflow}</tbody></table></div></div>
+        </div>
+      </section>`;
+    }
+
+    function renderCapitalFlowOutcomes(outcomes, statusPrefix) {
+      const status = $("capitalFlowStatus");
+      const table = $("capitalFlowTable");
+      const successful = outcomes.filter(item => item.data);
+      const failures = outcomes.filter(item => item.error);
+      if (!successful.length) {
+        // A failed refresh must not erase the result the user is reading.
+        if (failures.every(item => /HTTP 404|还没有保存过/.test(item.error?.message || ""))) {
+          status.textContent = "所选日期暂无本地记录；已显示的其他日期结果仍保留。可点击查询进行首次读取。";
+          return false;
+        }
+        status.innerHTML = `<span class="error">${esc(failures.map(item => `${typeLabel(item.type)}：${item.error.message}`).join("；") || "资金流向暂不可用")}</span>`;
+        return false;
+      }
+      table.innerHTML = `<div class="capital-flow-panels">${successful.map(item => renderCapitalFlowPanel(item.data)).join("")}</div>`;
+      const actualDates = [...new Set(successful.map(item => item.data.report_date).filter(Boolean))].join("、");
+      const sources = [...new Set(successful.map(item => `${item.data.cached ? "本地已保存结果" : "联网读取"}（${item.data.source || "东方财富"}）`))].join(" + ");
+      const warning = successful
+        .filter(item => item.data.refresh_error)
+        .map(item => `${typeLabel(item.type)}联网刷新失败，正在显示本地旧结果：${item.data.refresh_error}`);
+      const missing = failures.map(item => `${typeLabel(item.type)}不可用：${item.error.message}`);
+      const notices = [...warning, ...missing];
+      const partial = successful.some(item => (item.data.partial && !item.data.scope_complete) || item.data.refresh_error);
+      status.innerHTML = `${esc(statusPrefix)}${partial ? "（有缺失或旧记录，不代表完整下载成功）" : ""}；${esc(sources)}；收盘实际交易日 ${esc(actualDates || "暂无")}；收盘榜共 ${esc(successful.reduce((sum, item) => sum + Number(item.data.total || 0), 0))} 个板块；查询时间 ${esc(new Date().toLocaleTimeString())}${notices.length ? `<br><span class="notice">${esc(notices.join("；"))}</span>` : ""}`;
+      return true;
+    }
+
+    function selectedFlowSource() {
+      return $("capitalFlowSource")?.value || "eastmoney";
+    }
+
+    function flowDateStorageKey() {
+      return selectedFlowSource() === "eastmoney" ? "gupiao.capitalFlowDate" : `gupiao.capitalFlowDate.${selectedFlowSource()}`;
+    }
+
+    function updateFlowSourceControls() {
+      const imported = selectedFlowSource() !== "eastmoney";
+      $("capitalFlowImportPanel").hidden = !imported;
+      $("refreshCapitalFlowOnlineBtn").hidden = imported;
+      $("retryCapitalFlowBtn").hidden = true;
+      if ($("flowHistoryBackfillBtn")) $("flowHistoryBackfillBtn").hidden = imported;
+      if ($("flowAdvancedPanel")) $("flowAdvancedPanel").open = imported;
+    }
+
+    let activeFlowJobs = [];
+    let flowUiBusy = false;
+    let flowCancelRequested = false;
+    async function downloadFlowHistory(selectedDate, limit, resumeJobs=null, mode="daily") {
+      $("cancelFlowHistoryBtn").hidden = false;
+      $("cancelFlowHistoryBtn").disabled = true;
+      const outcomes = await Promise.all(selectedSectorTypes().map(async type => {
+        try {
+          const existing = resumeJobs?.find(item => item.sector_type === type && item.date === selectedDate);
+          if (resumeJobs && !existing) return null;
+          let job = existing
+            ? await api(`/api/sector-capital-flow/history/jobs/${encodeURIComponent(existing.id)}`)
+            : await api("/api/sector-capital-flow/history/jobs", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({sector_type:type, date:selectedDate, mode})});
+          activeFlowJobs.push(job.id);
+          if (flowCancelRequested) await api(`/api/sector-capital-flow/history/jobs/${encodeURIComponent(job.id)}/cancel`, {method:"POST"});
+          else $("cancelFlowHistoryBtn").disabled = false;
+          let shownStage = "";
+          while (["running","paused"].includes(job.status)) {
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            job = await api(`/api/sector-capital-flow/history/jobs/${encodeURIComponent(job.id)}`);
+            if (job.result && shownStage !== "history") {
+              renderCapitalFlowOutcomes([{type, data:{...job.result, rows:(job.result.rows || []).slice(0,limit), inflow_days_rank:(job.result.inflow_days_rank || []).slice(0,limit)}}], "已取得的数据先展示，后台仍在更新");
+              shownStage = "history";
+            }
+            const seconds = Math.max(0,Math.ceil(Number(job.next_retry_at || 0)-Date.now()/1000));
+            const channel = job.history_transports?.preferred_channel || "正在确认";
+            $("capitalFlowStatus").textContent = job.status === "paused"
+              ? "正在恢复之前的更新任务，已取得的数据仍保留…"
+              : job.stage === "cooldown"
+              ? `${typeLabel(type)}网络暂不可用，约 ${seconds} 秒后自动续补；已执行 ${job.round || 0}/${job.max_rounds || 3} 轮。可取消，无需再次点击。`
+              : job.stage === "current"
+              ? `正在联网更新${typeLabel(type)}当前资金数据，请稍候…`
+              : job.stage === "sync"
+              ? `${typeLabel(type)}当天榜已保存，正在同步已配置历史库并计算本地10日榜…`
+              : `正在自动更新${typeLabel(type)}（第${job.round || 1}/${job.max_rounds || 3}轮），收盘截至 ${job.cutoff || "正在确认"}：本轮尝试 ${job.attempted}/${job.total || "?"}，成功 ${job.downloaded}，失败 ${job.failed}；通道 ${channel}。${job.current_updated ? `当前 ${job.current_total} 个板块已更新；` : ""}成功记录已保存，无需再次点击。`;
+          }
+          if (!job.result) throw new Error(job.message || "未取得可显示的历史数据");
+          const data = {...job.result, rows:(job.result.rows || []).slice(0,limit), inflow_days_rank:(job.result.inflow_days_rank || []).slice(0,limit)};
+          if (["failed","cancelled","partial"].includes(job.status)) {
+            data.partial = true;
+            data.warnings = [...(data.warnings || []), job.message || "任务未完成，仍展示已保存记录"];
+            data.refresh_error = job.message || "更新未完成";
+          }
+          return {type, data};
+        } catch (error) { return {type,error}; }
+      }));
+      renderCapitalFlowOutcomes(outcomes.filter(Boolean), "一键更新任务结束");
+      localStorage.setItem(flowDateStorageKey(), selectedDate);
+    }
+
+    async function importFlowFile() {
+      const button = $("flowImportBtn");
+      button.disabled = true;
+      try {
+        const file = $("flowImportFile").files[0];
+        if (!file || file.size > 6_000_000) throw new Error("请选择不超过6MB的CSV/TXT文件");
+        const content = new TextDecoder($("flowImportEncoding").value, {fatal:true}).decode(await file.arrayBuffer());
+        const data = await api("/api/sector-capital-flow/import", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({
+          source:selectedFlowSource(), sector_type:$("flowImportType").value, unit:$("flowImportUnit").value,
+          content, overwrite:$("flowImportOverwrite").checked})});
+        $("flowImportStatus").textContent = `已保存 ${data.rows_saved} 条记录，日期 ${data.first_date} 至 ${data.last_date}；其他来源未改动。`;
+        $("capitalFlowDate").value = data.last_date;
+        localStorage.setItem(flowDateStorageKey(), data.last_date);
+        await restoreCapitalFlow();
+      } catch (error) { $("flowImportStatus").textContent = `导入失败：${error.message}`; }
+      finally { button.disabled = false; }
+    }
+
+    async function refreshCapitalFlow(forceRefresh=false, retryMissing=false, resumeJobs=null) {
+      if (flowUiBusy) return;
+      const button = $(retryMissing ? "retryCapitalFlowBtn" : forceRefresh ? "refreshCapitalFlowOnlineBtn" : "refreshCapitalFlowBtn");
+      const status = $("capitalFlowStatus");
+      const table = $("capitalFlowTable");
+      if (!button || !status || !table) return;
+      flowUiBusy = true;
+      flowCancelRequested = false;
+      $("refreshCapitalFlowBtn").disabled = true;
+      $("refreshCapitalFlowOnlineBtn").disabled = true;
+      $("retryCapitalFlowBtn").disabled = true;
+      for (const id of ["capitalFlowSource", "capitalFlowDate", "capitalFlowLimit", "flowImportBtn"]) if ($(id)) $(id).disabled = true;
+      status.textContent = retryMissing
+        ? "正在低并发补齐缺失板块；已保存的数据不会重新下载。取得的数据将逐个保存…"
+        : forceRefresh
+        ? "正在更新当天完整榜单并保存；随后读取本地逐日档案，不等待历史接口…"
+        : "正在读取所选日期的本地结果…";
+      try {
+        const limit = Math.max(1, Number($("capitalFlowLimit").value) || 50);
+        const selectedDate = $("capitalFlowDate").value;
+        const source = selectedFlowSource();
+        if ((retryMissing || forceRefresh) && source === "eastmoney") {
+          await downloadFlowHistory(selectedDate, limit, resumeJobs, retryMissing ? "history" : "daily");
+          if (!retryMissing) await loadCurrentFlow(false);
+          return;
+        }
+        const outcomes = await Promise.all(selectedSectorTypes().map(async type => {
+          try {
+            const refresh = retryMissing ? "&retry_missing=true" : forceRefresh ? "&refresh=true" : "";
+            return {type, data: await api(`/api/sector-capital-flow?sector_type=${encodeURIComponent(type)}&source=${source}&limit=${limit}&date=${encodeURIComponent(selectedDate)}${source === "eastmoney" ? refresh : ""}`)};
+          } catch (error) {
+            return {type, error};
+          }
+        }));
+        const loaded = renderCapitalFlowOutcomes(outcomes, retryMissing ? "缺失数据补齐查询完成" : forceRefresh ? "联网刷新查询完成" : "查询完成");
+        if (loaded && selectedDate) localStorage.setItem(flowDateStorageKey(), selectedDate);
+      } catch (error) {
+        status.innerHTML = `<span class="error">${esc(error.message)}</span>`;
+      } finally {
+        $("refreshCapitalFlowBtn").disabled = false;
+        $("refreshCapitalFlowOnlineBtn").disabled = false;
+        $("retryCapitalFlowBtn").disabled = false;
+        activeFlowJobs = [];
+        flowUiBusy = false;
+        if ($("cancelFlowHistoryBtn")) $("cancelFlowHistoryBtn").hidden = true;
+        for (const id of ["capitalFlowSource", "capitalFlowDate", "capitalFlowLimit", "flowImportBtn"]) if ($(id)) $(id).disabled = false;
+      }
+    }
+
+    async function restoreCapitalFlow() {
+      const limit = Math.max(1, Number($("capitalFlowLimit").value) || 50);
+      const today = localDateInputValue();
+      const savedDate = localStorage.getItem(flowDateStorageKey());
+      const preferredDate = savedDate && savedDate <= today ? savedDate : "";
+      if (preferredDate) $("capitalFlowDate").value = preferredDate;
+      const readCache = async (type, requestedDate) => {
+        const dateParam = requestedDate ? `&date=${encodeURIComponent(requestedDate)}` : "";
+        return api(`/api/sector-capital-flow/cache?sector_type=${encodeURIComponent(type)}&source=${selectedFlowSource()}&limit=${limit}${dateParam}`);
+      };
+      let outcomes = await Promise.all(selectedSectorTypes().map(async type => {
+        try {
+          return {type, data: await readCache(type, preferredDate)};
+        } catch (error) {
+          return {type, error};
+        }
+      }));
+      if (preferredDate && outcomes.every(item => item.error)) {
+        outcomes = await Promise.all(selectedSectorTypes().map(async type => {
+          try {
+            return {type, data: await readCache(type, "")};
+          } catch (error) {
+            return {type, error};
+          }
+        }));
+      }
+      const loaded = renderCapitalFlowOutcomes(outcomes, "已恢复本机保存结果");
+      if (loaded) {
+        const restoredDate = outcomes.find(item => item.data)?.data.requested_date;
+        if (restoredDate) {
+          $("capitalFlowDate").value = restoredDate;
+          localStorage.setItem(flowDateStorageKey(), restoredDate);
+        }
+      } else if (outcomes.every(item => item.error)) {
+        $("capitalFlowTable").innerHTML = "";
+        $("capitalFlowStatus").textContent = "本机暂无已保存的资金流向结果；选择日期后点击“查询资金流向”进行首次查询。";
+      }
+    }
+
+    function displayValue(value) {
+      if (value === null || value === undefined || value === "") return "-";
+      return esc(value);
+    }
+
+    function metricValue(value) {
+      if (value === null || value === undefined || value === "") return "-";
+      if (typeof value === "number" && Number.isFinite(value)) return esc(value.toLocaleString(undefined, {maximumFractionDigits: 2}));
+      return displayValue(value);
+    }
+
+    function renderSearchResults(data) {
+      searchResultCache = data.results || [];
+      const searchMessage = data.message ? `<div class="notice">${esc(data.message)}</div>` : "";
+      if (!searchResultCache.length) {
+        $("searchResults").innerHTML = searchMessage || `<span class="muted">暂无匹配结果</span>`;
+        return;
+      }
+      const body = searchResultCache.map((row, index) => {
+        const hasHistory = Number(row.has_history) === 1;
+        const history = hasHistory
+          ? `<span class="history-yes">有：${esc(row.latest_trade_date)}</span>`
+          : `<span class="history-no">暂无，需同步</span>`;
+        return `<tr><td><b>${esc(row.sector_code)}</b></td><td>${esc(row.sector_name)}</td>` +
+          `<td>${esc(typeLabel(row.sector_type))}</td><td>${esc(row.code_system)}</td><td>${esc(row.data_source)}</td><td>${history}</td>` +
+          `<td>${row.rank == null ? "-" : `#${esc(row.rank)}`} / RPS ${fmt(row.rps50)}</td>` +
+          `<td><button class="secondary use-search-result" data-index="${index}">加入同步筛选</button></td></tr>`;
+      }).join("");
+      const bulkAction = `<div style="margin:8px 0;"><button id="useAllSearchResults" class="secondary">全部加入同步筛选</button> <span class="muted">加入后点击一次“同步收盘数据”即可批量同步。</span></div>`;
+      $("searchResults").innerHTML = searchMessage + bulkAction + `<table><thead><tr><th>代码</th><th>名称</th><th>范围</th><th>代码体系</th><th>来源</th><th>本地历史</th><th>最新排名/RPS</th><th>操作</th></tr></thead><tbody>${body}</tbody></table>`;
+      const appendSyncCodes = (codes) => {
+        const existing = $("sectorCodes").value.split(/[\s,，]+/).map(item => item.trim()).filter(Boolean);
+        const merged = [];
+        const seen = new Set();
+        [...existing, ...codes].forEach(code => {
+          const value = String(code || "").trim();
+          const key = value.toLowerCase();
+          if (value && !seen.has(key)) { seen.add(key); merged.push(value); }
+        });
+        $("sectorCodes").value = merged.join(", ");
+        window.scrollTo({top:0, behavior:"smooth"});
+      };
+      $("useAllSearchResults").onclick = () => {
+        appendSyncCodes(searchResultCache.map(row => row.sector_code));
+        $("searchStatus").textContent = `已加入 ${searchResultCache.length} 个板块；点击“同步收盘数据”即可批量获取历史行情。`;
+      };
+      document.querySelectorAll(".use-search-result").forEach(button => {
+        button.onclick = () => {
+          const row = searchResultCache[Number(button.dataset.index)];
+          if (!row) return;
+          appendSyncCodes([row.sector_code]);
+          $("searchStatus").textContent = `已加入 ${row.sector_code}；可继续加入其他板块，最后点击一次“同步收盘数据”。`;
+        };
+      });
+    }
+
+    async function searchBoards() {
+      const query = $("boardSearchInput").value.trim();
+      if (!query) {
+        $("searchStatus").textContent = "请输入板块代码或名称。";
+        $("searchResults").innerHTML = "";
+        return;
+      }
+      $("searchStatus").textContent = "搜索中…";
+      try {
+        const types = selectedSectorTypes();
+        const outcomes = await Promise.all(types.map(async type => {
+          try {
+            return {type, data: await api(`/api/search?sector_type=${encodeURIComponent(type)}&query=${encodeURIComponent(query)}&provider=${encodeURIComponent(selectedProvider())}`)};
+          } catch (error) {
+            return {type, error};
+          }
+        }));
+        const successful = outcomes.filter(item => item.data).map(item => item.data);
+        if (!successful.length) {
+          throw new Error(outcomes.map(item => `${typeLabel(item.type)}：${item.error?.message || "搜索失败"}`).join("；"));
+        }
+        if (types.length === 1) {
+          const data = successful[0];
+          const missing = Array.isArray(data.unmatched_queries) ? data.unmatched_queries : [];
+          const missingText = missing.length ? `；未找到：${missing.join("、")}` : "";
+          const failed = outcomes.find(item => item.error);
+          const failedText = failed ? `；${typeLabel(failed.type)}搜索失败：${failed.error.message}` : "";
+          $("searchStatus").textContent = `目录 ${data.catalog_count} 条，找到 ${data.results.length} 条结果${missingText}${failedText}`;
+          renderSearchResults(data);
+          return;
+        }
+        const terms = query.split(/[\s,，]+/).map(item => item.trim()).filter(Boolean);
+        const results = [];
+        const seen = new Set();
+        successful.forEach(data => (data.results || []).forEach(row => {
+          const key = `${row.sector_type || ""}:${row.sector_code || ""}`;
+          if (!seen.has(key)) { seen.add(key); results.push(row); }
+        }));
+        const matched = new Set();
+        successful.forEach(data => {
+          const unmatched = new Set(data.unmatched_queries || []);
+          terms.forEach(term => { if (!unmatched.has(term)) matched.add(term); });
+        });
+        const missing = terms.filter(term => !matched.has(term));
+        const failed = outcomes.filter(item => item.error);
+        const failureText = failed.length ? `；${failed.map(item => `${typeLabel(item.type)}搜索失败`).join("、")}` : "";
+        const data = {
+          ok: true,
+          sector_type: "all",
+          query,
+          unmatched_queries: missing,
+          catalog_count: successful.reduce((sum, item) => sum + Number(item.catalog_count || 0), 0),
+          results,
+          message: failureText ? failureText.slice(1) : "",
+        };
+        const missingText = missing.length ? `；未找到：${missing.join("、")}` : "";
+        $("searchStatus").textContent = `概念+行业目录 ${data.catalog_count} 条，找到 ${results.length} 条结果${missingText}${failureText}`;
+        renderSearchResults(data);
+      } catch (error) {
+        $("searchStatus").innerHTML = `<span class="error">${esc(error.message)}</span>`;
+      }
+    }
+
+    async function loadReport(preserveStatus=false, resetDate=false) {
+      if (dualMode()) return loadDualReports();
+      if (resetDate) {
+        followLatestReport = true;
+        $("reportDateSelect").value = "";
+      }
+      $("status").textContent = "正在读取报告…";
+      const reportDate = followLatestReport ? "" : ($("reportDateSelect").value || "");
+      $("reportDateSelect").disabled = true;
+      try {
+        const types = selectedSectorTypes();
+        const outcomes = await Promise.all(types.map(async type => {
+          try {
+            const dateQuery = reportDate ? `&report_date=${encodeURIComponent(reportDate)}` : "";
+            const providerQuery = `&provider=${encodeURIComponent(selectedProvider())}`;
+            return {type, report: await api(`/api/report?sector_type=${encodeURIComponent(type)}${providerQuery}${dateQuery}`)};
+          } catch (error) {
+            return {type, error};
+          }
+        }));
+        const successful = outcomes.filter(item => item.report);
+        const failures = outcomes.filter(item => item.error);
+        if (!successful.length) {
+          throw new Error(failures.map(item => `${typeLabel(item.type)}：${item.error.message}`).join("；") || "暂无本地报告，请先同步收盘数据");
+        }
+        currentReports = Object.fromEntries(successful.map(item => [item.type, item.report]));
+        if (!types.includes(activeReportType) || !currentReports[activeReportType]) activeReportType = successful[0].type;
+        renderReportTabs();
+        renderReport(currentReports[activeReportType]);
+        if (failures.length) {
+          $("status").innerHTML += ` <span class="notice">${failures.map(item => `${typeLabel(item.type)}报告暂不可用：${esc(item.error.message)}`).join("；")}</span>`;
+        }
+        return true;
+      } catch (error) {
+        currentReport = null;
+        currentReports = {};
+        renderReportDateOptions(null);
+        renderReportTabs();
+        $("status").innerHTML = `<span class="error">${esc(error.message)}</span>`;
+        $("dataStatus").innerHTML = `<span class="error">${esc(error.message)}</span>`;
+        return false;
+      }
+    }
+
+    async function runCloseSync(automatic=false) {
+      const button = $("syncBtn"); button.disabled = true; button.textContent = automatic ? "启动同步中…" : "同步中…";
+      if (automatic) $("automationStatus").textContent = "启动时自动同步：正在同步收盘数据…";
+      try {
+        const requestBase = {calendar_days:Number($("calendarDays").value), max_sectors:Number($("maxSectors").value), sector_codes:$("sectorCodes").value};
+        const outcomes = [];
+        for (const type of selectedSectorTypes()) {
+          try {
+            const result = await api("/api/sync", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({...requestBase, sector_type:type, provider:selectedProvider()})});
+            outcomes.push({type, result});
+          } catch (error) {
+            outcomes.push({type, error});
+          }
+        }
+        const successful = outcomes.filter(item => item.result);
+        if (!successful.length) {
+          throw new Error(outcomes.map(item => `${typeLabel(item.type)}：${item.error?.message || item.result?.message || "同步失败"}`).join("；"));
+        }
+        const syncClass = outcomes.some(item => item.error || ["failed","partial","cached","stale"].includes(item.result.sync_status)) ? "notice" : "";
+        const reportLoaded = await loadReport(true, true);
+        if (!reportLoaded) return;
+        const syncMessage = outcomes.map(item => {
+          if (item.error) return `${typeLabel(item.type)}失败：${item.error.message}`;
+          const result = item.result;
+          const catalogNote = result.catalog_source === "cache" ? "；使用本地目录" : "";
+          return `${typeLabel(item.type)}：${result.message || `同步完成：${result.succeeded_sectors}/${result.selected_sectors} 个板块`}；保存 ${result.saved_rows || 0} 行${catalogNote}${result.errors?.length ? `；错误 ${result.errors.length} 条` : ""}`;
+        }).join("<br>");
+        const prefix = automatic ? "启动时自动同步完成" : "同步完成";
+        $("status").innerHTML = `<span class="${syncClass}">${esc(prefix + "：" + syncMessage).replace(/&lt;br&gt;/g, "<br>")}</span>`;
+        if (automatic) $("automationStatus").textContent = "启动时自动同步：已完成；以后每次打开工具会自动执行一次。";
+        return true;
+      } catch (error) {
+        $("status").innerHTML = `<span class="error">${automatic ? "启动时自动同步失败：" : ""}${esc(error.message)}</span>`;
+        if (automatic) $("automationStatus").textContent = "启动时自动同步失败；当前仍可手动点击“同步收盘数据”重试。";
+        return false;
+      } finally { button.disabled = false; button.textContent = "同步收盘数据"; }
+    }
+
+    function dualCurrentReport(panelKey) {
+      const state = dualPanelData[panelKey];
+      if (!state) return null;
+      return state.reports[state.activeType] || Object.values(state.reports || {})[0] || null;
+    }
+
+    function dualPanelMarkup(panelKey) {
+      const state = dualPanelData[panelKey];
+      const report = dualCurrentReport(panelKey);
+      const prefix = `dual-${panelKey}`;
+      const title = panelKey === "network" ? "网络数据" : "本地数据";
+      const available = ["concept", "industry"].filter(type => state?.reports?.[type]);
+      const tabs = available.length > 1
+        ? `<div id="${prefix}-tabs" class="dual-panel-tabs">${available.map(type => `<button type="button" class="secondary ${type === state.activeType ? "active" : ""}" data-dual-report-type="${type}">${typeLabel(type)}报告</button>`).join("")}</div>`
+        : `<div id="${prefix}-tabs" class="dual-panel-tabs" hidden></div>`;
+      const meta = report
+        ? `<div class="dual-source-panel-meta"><span>报告日期：<b id="${prefix}-date">${esc(report.report_date || "—")}</b></span><span>板块覆盖：<b id="${prefix}-coverage">—</b></span><span>历史：<b id="${prefix}-history-count">—</b></span></div>`
+        : "";
+      if (!report) {
+        return `<article id="${prefix}-panel" class="dual-source-panel ${panelKey === "network" ? "network" : "local"}">
+          <div class="dual-source-panel-header"><h3>${title}</h3><p>${esc(providerLabel(state?.provider || dualProvider(panelKey)))}</p></div>
+          <div id="${prefix}-status" class="dual-source-panel-status"><span class="error">${esc(state?.error || "暂无报告，请先读取或同步此数据源。")}</span></div>
+        </article>`;
+      }
+      return `<article id="${prefix}-panel" class="dual-source-panel ${panelKey === "network" ? "network" : "local"}">
+        <div class="dual-source-panel-header"><h3>${title}</h3><p>${esc(providerLabel(state.provider))}</p>${meta}</div>
+        <div id="${prefix}-status" class="dual-source-panel-status">正在整理报告状态…</div>
+        ${tabs}
+        <section class="dual-source-panel-section"><h4>20日历史前300序列表</h4>
+          <div id="${prefix}-constituentPanel" class="constituent-panel" hidden>
+            <div class="constituent-panel-head"><div><h3 id="${prefix}-constituentTitle">板块成分股</h3><p id="${prefix}-constituentStatus" class="muted">点击板块名称查看成分股和 ETF。</p></div><button type="button" class="secondary dual-constituent-close" data-dual-panel="${panelKey}">关闭</button></div>
+            <div id="${prefix}-constituentTable" class="constituent-table"></div>
+          </div>
+          <div id="${prefix}-history" class="table-wrap history-wrap"></div>
+        </section>
+        <div class="dual-panel-grid">
+          <section class="dual-source-panel-section"><h4>单日强势前进 TOP 榜</h4><div id="${prefix}-dailyUp"></div></section>
+          <section class="dual-source-panel-section"><h4>单日走弱 TOP 榜</h4><div id="${prefix}-dailyDown"></div></section>
+          <section class="dual-source-panel-section"><h4>最近5日强势前进 TOP 榜</h4><div id="${prefix}-fiveUp"></div></section>
+          <section class="dual-source-panel-section"><h4>最近5日走弱 TOP 榜</h4><div id="${prefix}-fiveDown"></div></section>
+        </div>
+        <section class="dual-source-panel-section"><h4>百名内最近5日强势前进 TOP 榜</h4><p id="${prefix}-fiveTop100LeaderStatus" class="muted">领涨股按板块成分股最新涨跌幅。</p><div id="${prefix}-fiveTop100Up"></div></section>
+        <section class="dual-source-panel-section"><h4>最近10天至少有6天名次前进榜</h4><p id="${prefix}-tenDayLeaderStatus" class="muted">领涨股按板块成分股最新涨跌幅。</p><div id="${prefix}-tenDaySixUp"></div></section>
+        <details open><summary>趋势与策略</summary><div id="${prefix}-groups"></div><div id="${prefix}-trend"></div><div id="${prefix}-strategy"></div></details>
+      </article>`;
+    }
+
+    function dualRenderHistory(module, panelKey) {
+      const target = $(`dual-${panelKey}-history`);
+      if (!target) return;
+      const dates = module.dates || [];
+      const rows = module.rows || [];
+      if (!rows.length) {
+        target.innerHTML = `<span class="muted">暂无历史数据</span>`;
+        return;
+      }
+      const headers = dates.map(date => `<th>${esc(String(date).slice(5))}</th>`).join("");
+      const baselineDate = module.rank_change_3d_baseline_date || "";
+      const movementTitle = module.rank_change_3d_definition || "最近3个交易日第一天到最新一天的名次变化";
+      const body = rows.map(row => {
+        const cells = dates.map(date => {
+          const cell = row.history && row.history[date];
+          if (!cell) return `<td class="history-cell muted">—</td>`;
+          return `<td class="history-cell"><b>#${esc(cell.rank)}</b> ${esc(cell.rank_change_2d_label || "")}<br><span class="muted">RPS ${fmt(cell.rps50)}｜收盘 ${fmt(cell.close)}｜涨幅 ${pct(cell.pct_change)}</span><br><span class="muted">额 ${cell.amount == null ? "-" : Number(cell.amount).toLocaleString()}</span></td>`;
+        }).join("");
+        const movementValue = row.rank_change_3d;
+        const movement = movementValue === null || movementValue === undefined ? NaN : Number(movementValue);
+        const movementClass = Number.isFinite(movement) ? movement > 0 ? "up" : movement < 0 ? "down" : "muted" : "muted";
+        const movementLabel = row.rank_change_3d_label || "—";
+        const movementHint = baselineDate ? `相对 ${baselineDate}：${movementTitle}` : movementTitle;
+        const sectorCode = row.sector_code || "";
+        const sectorName = row.sector_name || sectorCode;
+        return `<tr class="selectable-row" data-sector-code="${esc(sectorCode)}" title="点击高亮此行，再次点击取消"><td class="history-rank-col">${esc(row.rank)}</td><td class="history-sector-col"><button type="button" class="history-sector-link" data-dual-panel="${panelKey}" data-provider="${esc(dualPanelData[panelKey].provider)}" data-sector-type="${esc(row.sector_type || dualPanelData[panelKey].activeType || "")}" data-sector-code="${esc(sectorCode)}" data-sector-name="${esc(sectorName)}" title="点击查看 ${esc(sectorName)} 的股票和 ETF">${esc(sectorName)}</button></td>${cells}<td class="rank-movement-cell ${movementClass}" title="${esc(movementHint)}">${esc(movementLabel)}<span class="muted">${baselineDate ? `对比 ${esc(String(baselineDate).slice(5))}` : "数据不足"}</span></td></tr>`;
+      }).join("");
+      target.innerHTML = `<table><thead><tr><th class="history-rank-col">最新排名</th><th class="history-sector-col">板块</th>${headers}<th title="${esc(movementTitle)}">最近3天名次变动</th></tr></thead><tbody>${body}</tbody></table>`;
+    }
+
+    function dualRenderGroups(report, targetId) {
+      const module = report.modules.t_groups || {};
+      const groups = module.groups || {};
+      $(targetId).innerHTML = ["T0","T1","T2"].map(name => {
+        const rows = groups[name] || [];
+        const names = rows.slice(0, 20).map(row => `<span class="tag">${esc(row.sector_name || row.sector_code)} #${esc(row.rank)} RPS ${fmt(row.rps50)}</span>`).join("");
+        return `<h3>${name}（${rows.length}）</h3><div>${names || `<span class="muted">暂无</span>`}</div><div class="rule">${esc((module.rules || {})[name] || "")}</div>`;
+      }).join("");
+    }
+
+    function dualRenderTrend(report, targetId) {
+      const trend = report.modules.trend || {};
+      const breadth = trend.breadth || {};
+      const risks = trend.risk_flags || [];
+      $(targetId).innerHTML = `<div class="status-panel"><span>上涨 <b>${esc(breadth.rising)}</b></span><span>下跌 <b>${esc(breadth.falling)}</b></span><span>平盘 <b>${esc(breadth.flat)}</b></span><span>中位涨跌幅 <b>${fmt(trend.median_pct_change)}%</b></span><span>单日前进榜 <b>${esc(trend.daily_up_count)}</b></span><span>单日走弱榜 <b>${esc(trend.daily_down_count)}</b></span></div><p><b>${esc(trend.headline || "")}</b></p><p>${(trend.observations || []).map(item => `<span class="tag">${esc(item)}</span>`).join("")}</p><p>RPS50 靠前：${(trend.top_rps_sectors || []).map(item => `<span class="tag">${esc(item)}</span>`).join("") || "-"}</p><p>5日排名前进：${(trend.top_5d_advance_sectors || []).map(item => `<span class="tag">${esc(item)}</span>`).join("") || "-"}</p>${risks.length ? `<p>风险标记：${risks.map(item => `<span class="tag warn">${esc(item)}</span>`).join("")}</p>` : ""}<p class="muted">${esc(trend.caution || "")}</p>`;
+    }
+
+    function dualRenderStrategy(report, targetId) {
+      const strategy = report.modules.strategy || {};
+      $(targetId).innerHTML = `<p class="notice">${esc(strategy.disclaimer || "")}</p>` +
+        (strategy.buckets || []).map(bucket => `<div class="bucket"><div class="bucket-title"><span>${esc(bucket.name)}</span><span>${esc(bucket.reference_percent)}%</span></div><div>${(bucket.sectors || []).map(item => `<span class="tag">${esc(item)}</span>`).join("") || `<span class="muted">暂无指定板块</span>`}</div><div class="rule">${esc(bucket.rule || "")}</div></div>`).join("") +
+        `<h3>下一交易日验证条件</h3><ul>${(strategy.validation_next_day || []).map(item => `<li>${esc(item)}</li>`).join("")}</ul><h3>应避免的动作</h3><ul>${(strategy.avoid_actions || []).map(item => `<li>${esc(item)}</li>`).join("")}</ul>`;
+    }
+
+    async function loadDualSectorLeaders(panelKey, report, rows, tableId, statusId) {
+      const serialState = dualSectorLeaderRequestSerial[panelKey];
+      const requestSerial = ++serialState[tableId.replace(`dual-${panelKey}-`, "")];
+      const state = dualPanelData[panelKey];
+      const isCurrent = () => requestSerial === serialState[tableId.replace(`dual-${panelKey}-`, "")] && dualCurrentReport(panelKey) === report;
+      const status = $(statusId);
+      if (!status) return;
+      if (!rows.length) { status.textContent = "领涨股按板块成分股最新涨跌幅；暂无可补充的板块。"; return; }
+      status.textContent = "正在读取板块成分股，稍候补充领涨股…";
+      try {
+        const data = await api("/api/sector-leaders", {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({sector_type:report.sector_type, provider:state.provider, sectors:rows.slice(0,20).map(row => ({sector_code:row.sector_code, sector_name:row.sector_name || row.sector_code}))})
+        });
+        if (!isCurrent()) return;
+        const tableRows = Array.from(document.querySelectorAll(`#${tableId} tbody tr.selectable-row`));
+        (data.leaders || []).forEach(item => {
+          const row = tableRows.find(node => node.dataset.sectorCode === String(item.sector_code));
+          const cell = row?.querySelector('[data-field="leading_stock"]');
+          if (cell) cell.innerHTML = leaderStockCell(item, "leading_stock");
+        });
+        status.textContent = data.warnings?.length
+          ? `已补充 ${(data.leaders || []).length} 个板块；部分板块暂时没有可用成分股行情。`
+          : `已补充 ${(data.leaders || []).length} 个板块的领涨股；按板块成分股最新涨跌幅。`;
+        tableRows.forEach(row => row.querySelectorAll('[data-field="leading_stock"]').forEach(cell => {
+          if (cell.textContent?.includes("读取中")) cell.innerHTML = `<span class="muted">—</span>`;
+        }));
+      } catch (error) {
+        if (!isCurrent()) return;
+        status.textContent = `领涨股暂时读取失败：${error.message}；不影响主榜数据。`;
+        document.querySelectorAll(`#${tableId} [data-field="leading_stock"]`).forEach(cell => { cell.innerHTML = `<span class="muted">—</span>`; });
+      }
+    }
+
+    function dualRenderReport(panelKey) {
+      const state = dualPanelData[panelKey];
+      const report = dualCurrentReport(panelKey);
+      const panel = $(`dual-${panelKey}-panel`);
+      if (!state || !report || !panel) return;
+      const modules = report.modules || {};
+      const status = report.data_status || {};
+      const dataWindow = report.data_window || {};
+      const warnings = [...(status.warnings || [])];
+      const ignoredDates = status.newer_dates_ignored || [];
+      if (ignoredDates.length) warnings.unshift(`较新的 ${ignoredDates.join("、")} 数据覆盖不足，当前展示 ${report.report_date}。`);
+      $(`dual-${panelKey}-date`).textContent = report.report_date || "—";
+      $(`dual-${panelKey}-coverage`).textContent = `${dataWindow.sector_count || 0}/${dataWindow.normal_sector_count || 0}`;
+      $(`dual-${panelKey}-history-count`).textContent = `${status.history_dates_available || 0}/${status.history_dates_required || 0}`;
+      $(`dual-${panelKey}-status`).innerHTML = `<div class="status-panel"><span>范围：<b>${esc(typeLabel(report.sector_type))}</b></span><span>该来源最新日期：<b>${esc(status.latest_available_date || report.report_date || "—")}</b></span><span>排名来源：<b>${status.rank_mode === "source_snapshot" ? "结构化快照" : status.rank_mode === "mixed" ? "快照+本地混合" : "本地计算"}</b></span><span>前一交易日：${esc(dataWindow.previous_date || "—")}</span></div>${warnings.length ? `<ul class="warning-list">${warnings.map(item => `<li>${esc(item)}</li>`).join("")}</ul>` : `<span>当前数据覆盖正常。</span>`}`;
+      const tabs = $(`dual-${panelKey}-tabs`);
+      if (tabs) tabs.querySelectorAll("button[data-dual-report-type]").forEach(button => {
+        button.onclick = () => { state.activeType = button.dataset.dualReportType; renderDualPanel(panelKey); };
+      });
+      const historyModule = modules.historical_top100 || {};
+      dualRenderHistory(historyModule, panelKey);
+      const dailyFields = [
+        {key:"rank_change_1d_label",label:"名次变化",render:(v,r)=>label(r,"rank_change_1d_label")},
+        {key:"rps_change_1d",label:"RPS变化",render:fmt}, {key:"pct_change",label:"涨幅",render:pct}, {key:"rank",label:"现排名",render:v=>esc(v)}
+      ];
+      const fiveFields = [
+        {key:"rank_change_5d_label",label:"名次变化",render:(v,r)=>label(r,"rank_change_5d_label")},
+        {key:"rps_change_5d",label:"RPS变化",render:fmt}, {key:"return_5d",label:"5日涨幅",render:pct}, {key:"rank",label:"现排名",render:v=>esc(v)}
+      ];
+      $(`dual-${panelKey}-dailyUp`).innerHTML = miniTable((modules.daily_up || {}).rows, dailyFields);
+      $(`dual-${panelKey}-dailyDown`).innerHTML = miniTable((modules.daily_down || {}).rows, dailyFields);
+      $(`dual-${panelKey}-fiveUp`).innerHTML = miniTable((modules.five_day_up || {}).rows, fiveFields);
+      $(`dual-${panelKey}-fiveDown`).innerHTML = miniTable((modules.five_day_down || {}).rows, fiveFields);
+      const topRows = (modules.five_day_top100_up || {}).rows || [];
+      const topFields = [...fiveFields, {key:"leading_stock",label:"领涨股",render:(_,r)=>leaderStockCell(r,"leading_stock")}];
+      $(`dual-${panelKey}-fiveTop100Up`).innerHTML = miniTable(topRows, topFields);
+      void loadDualSectorLeaders(panelKey, report, topRows, `dual-${panelKey}-fiveTop100Up`, `dual-${panelKey}-fiveTop100LeaderStatus`);
+      const tenModule = modules.ten_day_six_up || modules.five_day_consecutive_up || modules.ten_day_consecutive_up || {};
+      const tenRows = tenModule.rows || [];
+      const tenFields = [
+        {key:"up_days_10d_label",label:"前进天数",render:(v,r)=>esc(r.up_days_10d_label || `${r.up_days_10d ?? 0}天`)},
+        {key:"rank_change_10d_label",label:"累计名次变化",render:(v,r)=>label(r,"rank_change_10d_label")},
+        {key:"rank_path_10d",label:"10日名次轨迹",render:v=>esc(v || "-")},
+        {key:"rps_change_10d",label:"RPS变化",render:fmt}, {key:"return_10d",label:"10日涨幅",render:pct}, {key:"rank",label:"现排名",render:v=>esc(v)},
+        {key:"leading_stock",label:"领涨股",render:(_,r)=>leaderStockCell(r,"leading_stock")}
+      ];
+      if (tenRows.length) {
+        $(`dual-${panelKey}-tenDaySixUp`).innerHTML = miniTable(tenRows, tenFields);
+        void loadDualSectorLeaders(panelKey, report, tenRows, `dual-${panelKey}-tenDaySixUp`, `dual-${panelKey}-tenDayLeaderStatus`);
+      } else {
+        dualSectorLeaderRequestSerial[panelKey].tenDaySixUp++;
+        const requiredDays = Number(tenModule.required_days || 10);
+        const availableDays = Number(tenModule.available_days || 0);
+        const minAdvanceDays = Number(tenModule.min_advance_days || 6);
+        const hint = availableDays < requiredDays ? `数据不足：当前只有 ${availableDays} 个可用交易日，需要 ${requiredDays} 个交易日。` : `最近10个交易日没有板块达到至少${minAdvanceDays}天名次前进。`;
+        $(`dual-${panelKey}-tenDaySixUp`).innerHTML = `<span class="muted">${esc(hint)}</span>`;
+      }
+      dualRenderGroups(report, `dual-${panelKey}-groups`);
+      dualRenderTrend(report, `dual-${panelKey}-trend`);
+      dualRenderStrategy(report, `dual-${panelKey}-strategy`);
+      if (panelKey === "local") {
+        currentReports = state.reports;
+        currentReport = report;
+        activeReportType = state.activeType;
+      }
+    }
+
+    function renderDualPanel(panelKey) {
+      const root = $("dualPanels");
+      if (!root) return;
+      const old = $(`dual-${panelKey}-panel`);
+      const html = dualPanelMarkup(panelKey);
+      if (old) old.outerHTML = html;
+      else root.insertAdjacentHTML("beforeend", html);
+      dualRenderReport(panelKey);
+    }
+
+    function renderDualPanels() {
+      const root = $("dualPanels");
+      if (!root) return;
+      root.innerHTML = "";
+      renderDualPanel("local");
+      renderDualPanel("network");
+    }
+
+    async function loadDualHistoryConstituents(panelKey, sectorCode, sectorName, providerOverride, sectorTypeOverride) {
+      const panel = $(`dual-${panelKey}-constituentPanel`);
+      const title = $(`dual-${panelKey}-constituentTitle`);
+      const status = $(`dual-${panelKey}-constituentStatus`);
+      const table = $(`dual-${panelKey}-constituentTable`);
+      if (!panel || !title || !status || !table) return;
+      const requestSerial = ++dualConstituentRequestSerial[panelKey];
+      const name = sectorName || sectorCode || "当前板块";
+      panel.hidden = false;
+      title.textContent = `${name}：成分股和 ETF`;
+      status.textContent = "正在读取板块成分股，请稍候…";
+      table.innerHTML = `<span class="muted">读取中…</span>`;
+      panel.scrollIntoView({behavior:"smooth", block:"nearest"});
+      try {
+        const data = await api("/api/sector-constituents", {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({sector_code:sectorCode, sector_name:sectorName, sector_type:sectorTypeOverride || dualPanelData[panelKey].activeType, provider:providerOverride || dualProvider(panelKey)})
+        });
+        if (requestSerial !== dualConstituentRequestSerial[panelKey]) return;
+        table.innerHTML = renderConstituents(data);
+        const warning = Array.isArray(data.warnings) && data.warnings.length ? `；${data.warnings[0]}` : "";
+        status.textContent = `共 ${data.count || 0} 只证券：股票 ${data.stock_count || 0}，ETF ${data.etf_count || 0}；来源：${data.source || "公开行情接口"}${warning}`;
+      } catch (error) {
+        if (requestSerial !== dualConstituentRequestSerial[panelKey]) return;
+        table.innerHTML = `<span class="error">${esc(error.message)}</span>`;
+        status.textContent = "读取失败；不会影响此数据源的历史排名表。";
+      }
+    }
+
+    async function fetchDualReports(provider, reportDate="") {
+      const outcomes = await Promise.all(selectedSectorTypes().map(async type => {
+        try {
+          const dateQuery = reportDate ? `&report_date=${encodeURIComponent(reportDate)}` : "";
+          return {type, report:await api(`/api/report?sector_type=${encodeURIComponent(type)}&provider=${encodeURIComponent(provider)}${dateQuery}`)};
+        } catch (error) {
+          return {type, error};
+        }
+      }));
+      return {
+        reports:Object.fromEntries(outcomes.filter(item => item.report).map(item => [item.type, item.report])),
+        failures:outcomes.filter(item => item.error),
+      };
+    }
+
+    function dualCommonDate(results) {
+      let common = null;
+      results.forEach(result => Object.values(result.reports || {}).forEach(report => {
+        const dates = new Set((report.available_dates || []).map(String));
+        if (!dates.size && report.report_date) dates.add(String(report.report_date));
+        if (common === null) common = dates;
+        else common = new Set([...common].filter(date => dates.has(date)));
+      }));
+      return common && common.size ? [...common].sort().pop() : "";
+    }
+
+    async function loadDualReports() {
+      if (!dualMode() || dualLoading) return false;
+      dualLoading = true;
+      const status = $("dualSourceStatus");
+      if (status) status.textContent = "正在分别读取本地和网络报告…";
+      try {
+        const providers = {local:dualProvider("local"), network:dualProvider("network")};
+        let fetched = await Promise.all([fetchDualReports(providers.local), fetchDualReports(providers.network)]);
+        let dateNote = "各自最新日期";
+        if ($("dualDateMode")?.value === "common") {
+          const commonDate = dualCommonDate(fetched);
+          if (commonDate) {
+            fetched = await Promise.all([fetchDualReports(providers.local, commonDate), fetchDualReports(providers.network, commonDate)]);
+            dateNote = `共同日期 ${commonDate}`;
+          } else {
+            dateNote = "没有共同可用日期，已保留各自最新日期";
+          }
+        }
+        ["local","network"].forEach((key, index) => {
+          const state = dualPanelData[key];
+          const result = fetched[index];
+          state.provider = providers[key];
+          state.reports = result.reports;
+          state.error = result.failures.length && !Object.keys(result.reports).length
+            ? result.failures.map(item => `${typeLabel(item.type)}：${item.error.message}`).join("；")
+            : result.failures.length ? result.failures.map(item => `${typeLabel(item.type)}不可用：${item.error.message}`).join("；") : "";
+          const available = ["concept","industry"].filter(type => state.reports[type]);
+          if (!available.includes(state.activeType)) state.activeType = available[0] || "concept";
+        });
+        renderDualPanels();
+        const details = ["local","network"].map(key => {
+          const state = dualPanelData[key];
+          const report = dualCurrentReport(key);
+          return `${key === "local" ? "本地" : "网络"}：${report ? `${report.report_date}，${report.data_window?.sector_count || 0} 个板块` : "暂无报告"}`;
+        }).join("；");
+        const partial = ["local","network"].some(key => dualPanelData[key].error);
+        if (status) status.innerHTML = `${esc(dateNote)}；${esc(details)}${partial ? `；<span class="notice">${esc(["local","network"].map(key => dualPanelData[key].error).filter(Boolean).join("；"))}</span>` : ""}`;
+        $("status").textContent = `双数据源对照已读取：${details}。${dateNote}`;
+        return Object.values(dualPanelData).some(state => Object.keys(state.reports).length);
+      } catch (error) {
+        if (status) status.innerHTML = `<span class="error">读取两边报告失败：${esc(error.message)}</span>`;
+        $("status").innerHTML = `<span class="error">${esc(error.message)}</span>`;
+        return false;
+      } finally {
+        dualLoading = false;
+      }
+    }
+
+    function applyViewMode() {
+      const isDual = dualMode();
+      $("singleProviderControl").hidden = isDual;
+      $("reportDateSelect").parentElement.hidden = isDual;
+      $("syncBtn").hidden = isDual;
+      $("loadBtn").hidden = isDual;
+      $("llmBtn").hidden = isDual;
+      $("heroGrid").hidden = isDual;
+      $("singleReportArea").hidden = isDual;
+      $("dualSourceControls").hidden = !isDual;
+      $("dualWorkspace").hidden = !isDual;
+      document.body.classList.toggle("dual-mode", isDual);
+      if (!isDual) $("heroProvider").textContent = providerLabel($("marketProvider").value || "tdx");
+    }
+
+    async function runDualSync(panelKey, reload=true) {
+      const buttonId = panelKey === "local" ? "dualSyncLocalBtn" : "dualSyncNetworkBtn";
+      const button = $(buttonId);
+      const provider = dualProvider(panelKey);
+      if (button) { button.disabled = true; button.textContent = "同步中…"; }
+      const labelText = panelKey === "local" ? "本地" : "网络";
+      if ($("dualSourceStatus")) $("dualSourceStatus").textContent = `正在同步${labelText}数据（${providerLabel(provider)}）…`;
+      try {
+        const requestBase = {calendar_days:Number($("calendarDays").value), max_sectors:Number($("maxSectors").value), sector_codes:$("sectorCodes").value};
+        const outcomes = [];
+        for (const type of selectedSectorTypes()) {
+          try {
+            const result = await api("/api/sync", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({...requestBase, sector_type:type, provider})});
+            outcomes.push({type, result});
+          } catch (error) { outcomes.push({type, error}); }
+        }
+        const successful = outcomes.filter(item => item.result);
+        if (!successful.length) throw new Error(outcomes.map(item => `${typeLabel(item.type)}：${item.error?.message || "同步失败"}`).join("；"));
+        if (reload) await loadDualReports();
+        const message = outcomes.map(item => item.error ? `${typeLabel(item.type)}失败：${item.error.message}` : `${typeLabel(item.type)}：${item.result.message || `保存 ${item.result.saved_rows || 0} 行`}`).join("；");
+        if ($("dualSourceStatus")) $("dualSourceStatus").textContent = `${labelText}数据同步完成：${message}`;
+        return true;
+      } catch (error) {
+        if ($("dualSourceStatus")) $("dualSourceStatus").innerHTML = `<span class="error">${labelText}数据同步失败：${esc(error.message)}</span>`;
+        return false;
+      } finally {
+        if (button) { button.disabled = false; button.textContent = panelKey === "local" ? "同步本地" : "同步网络"; }
+      }
+    }
+
+    async function runDualSyncBoth() {
+      const button = $("dualSyncBothBtn");
+      if (button) { button.disabled = true; button.textContent = "同步中…"; }
+      try {
+        const results = await Promise.all([runDualSync("local", false), runDualSync("network", false)]);
+        if (!results.some(Boolean)) throw new Error("两边都同步失败");
+        await loadDualReports();
+        if ($("dualSourceStatus")) $("dualSourceStatus").textContent = "本地和网络数据同步流程已完成；请查看两边各自的日期与覆盖状态。";
+      } finally {
+        if (button) { button.disabled = false; button.textContent = "同时同步两边"; }
+      }
+    }
+
+    installRowSelection();
+    $("syncBtn").onclick = () => runCloseSync(false);
+
+    $("viewMode").onchange = async () => {
+      const mode = $("viewMode").value === "dual" ? "dual" : "single";
+      localStorage.setItem("gupiao.viewMode", mode);
+      applyViewMode();
+      if (mode === "dual") await loadDualReports();
+      else {
+        await loadReport(false, true);
+        await restoreCapitalFlow();
+      }
+    };
+    $("dualLocalProvider").onchange = async () => {
+      localStorage.setItem("gupiao.dualLocalProvider", $("dualLocalProvider").value);
+      if (dualMode()) await loadDualReports();
+    };
+    $("dualNetworkProvider").onchange = async () => {
+      localStorage.setItem("gupiao.dualNetworkProvider", $("dualNetworkProvider").value);
+      if (dualMode()) await loadDualReports();
+    };
+    $("dualDateMode").onchange = async () => {
+      localStorage.setItem("gupiao.dualDateMode", $("dualDateMode").value);
+      if (dualMode()) await loadDualReports();
+    };
+    $("dualLoadBtn").onclick = () => loadDualReports();
+    $("dualSyncLocalBtn").onclick = () => runDualSync("local");
+    $("dualSyncNetworkBtn").onclick = () => runDualSync("network");
+    $("dualSyncBothBtn").onclick = runDualSyncBoth;
+    if ($("capitalFlowDate")) {
+      const today = localDateInputValue();
+      $("capitalFlowDate").max = today;
+      if (!$("capitalFlowDate").value) $("capitalFlowDate").value = today;
+    }
+    $("refreshCapitalFlowBtn").onclick = () => refreshCapitalFlow(false);
+    $("refreshCapitalFlowOnlineBtn").onclick = () => refreshCapitalFlow(true);
+    $("retryCapitalFlowBtn").onclick = () => refreshCapitalFlow(false, true);
+    $("capitalFlowLimit").onchange = restoreCapitalFlow;
+    $("capitalFlowSource").value = localStorage.getItem("gupiao.capitalFlowSource") || "eastmoney";
+    if (!$("capitalFlowSource").value) $("capitalFlowSource").value = "eastmoney";
+    updateFlowSourceControls();
+    $("capitalFlowSource").onchange = async () => {
+      localStorage.setItem("gupiao.capitalFlowSource", selectedFlowSource());
+      $("capitalFlowTable").innerHTML = "";
+      $("capitalFlowDate").value = localStorage.getItem(flowDateStorageKey()) || localDateInputValue();
+      updateFlowSourceControls();
+      await restoreCapitalFlow();
+    };
+    $("flowImportBtn").onclick = importFlowFile;
+    $("flowHistoryBackfillBtn").onclick = () => refreshCapitalFlow(false,true);
+    $("clearFlowCacheBtn").onclick = async () => {
+      if (flowUiBusy || $("currentFlowRefresh").disabled) return;
+      $("clearFlowCacheBtn").disabled = true;
+      try {
+        const result = await api("/api/sector-capital-flow/clear-cache",{method:"POST"});
+        $("currentFlowTable").innerHTML = "";
+        $("currentFlowStatus").textContent = result.message;
+        await restoreCapitalFlow();
+      } catch (error) { $("capitalFlowStatus").textContent = error.message; }
+      finally { $("clearFlowCacheBtn").disabled = false; }
+    };
+    $("cancelFlowHistoryBtn").onclick = async () => {
+      flowCancelRequested = true;
+      $("cancelFlowHistoryBtn").disabled = true;
+      try {
+        await Promise.all(activeFlowJobs.map(id => api(`/api/sector-capital-flow/history/jobs/${encodeURIComponent(id)}/cancel`, {method:"POST"})));
+        $("capitalFlowStatus").textContent = "已请求取消，等待当前请求结束；成功记录已保留。";
+      } catch (error) {
+        $("capitalFlowStatus").textContent = error.message;
+        $("cancelFlowHistoryBtn").disabled = false;
+      }
+    };
+    $("currentFlowRefresh").onclick = () => loadCurrentFlow(true);
+    $("clearCapitalFlowBtn").onclick = () => { $("clearCapitalFlowConfirm").hidden = false; };
+    $("cancelClearCapitalFlowBtn").onclick = () => { $("clearCapitalFlowConfirm").hidden = true; };
+    $("confirmClearCapitalFlowBtn").onclick = clearCapitalFlowData;
+    $("currentFlowLimit").onchange = () => loadCurrentFlow(false);
+
+    $("loadBtn").onclick = loadReport;
+    $("reportDateSelect").onchange = () => {
+      followLatestReport = $("reportDateSelect").value === "";
+      loadReport();
+    };
+    $("sectorType").onchange = async () => {
+      followLatestReport = true;
+      activeReportType = $("sectorType").value === "industry" ? "industry" : "concept";
+      currentReports = {};
+      renderReportTabs();
+      $("boardSearchInput").value = "";
+      $("sectorCodes").value = "";
+      $("searchStatus").textContent = "";
+      $("searchResults").innerHTML = "";
+      $("capitalFlowTable").innerHTML = "";
+      $("currentFlowTable").innerHTML = "";
+      void loadCurrentFlow(false);
+      $("capitalFlowStatus").textContent = "正在恢复当前板块范围的本地资金流向结果…";
+      if (dualMode()) {
+        await loadDualReports();
+        return;
+      }
+      await loadReport();
+      await restoreCapitalFlow();
+    };
+    $("marketProvider").onchange = async () => {
+      localStorage.setItem("gupiao.marketProvider", selectedProvider());
+      $("heroProvider").textContent = providerLabel(selectedProvider());
+      followLatestReport = true;
+      currentReports = {};
+      $("status").textContent = `正在读取 ${providerLabel(selectedProvider())} 的独立报告…`;
+      $("searchResults").innerHTML = "";
+      $("searchStatus").textContent = "数据源已切换，请按需更新板块目录。";
+      await loadReport(false, true);
+    };
+    $("llmModel").onchange = () => {
+      localStorage.setItem("gupiao.llmModel", selectedLlmModel());
+      updateLlmButtonLabel();
+      $("status").textContent = `已选择复盘模型：${llmModelLabel(selectedLlmModel())}；点击生成报告时生效。`;
+    };
+    $("fontScale").onchange = () => applyFontScale($("fontScale").value);
+    $("searchBtn").onclick = searchBoards;
+    $("formulaSelect").onchange = () => {
+      activeFormulaId = Number($("formulaSelect").value || 0) || null;
+      const definition = activeFormulaDefinition();
+      if (!definition) {
+        $("formulaName").value = "";
+        $("formulaInput").value = "";
+        $("formulaStatus").textContent = "已切换到新建公式，请填写名称和内容。";
+        updateFormulaControls();
+        return;
+      }
+      $("formulaName").value = definition.name || "";
+      $("formulaInput").value = definition.formula || "";
+      $("formulaStatus").textContent = `已载入公式“${definition.name}”。`;
+      updateFormulaControls();
+    };
+    $("newFormulaBtn").onclick = () => {
+      const definition = activeFormulaDefinition();
+      activeFormulaId = null;
+      $("formulaSelect").value = "";
+      $("formulaName").value = definition ? `${definition.name}（副本）` : "";
+      $("formulaInput").value = definition?.formula || "";
+      $("formulaStatus").textContent = "已新建编辑草稿，请填写名称并保存。";
+      updateFormulaControls();
+      $("formulaName").focus();
+    };
+    $("saveFormulaBtn").onclick = async () => {
+      const button = $("saveFormulaBtn");
+      button.disabled = true;
+      try {
+        const formula = await saveCurrentFormula();
+        activeFormulaId = Number(formula.id);
+      } catch (error) {
+        $("formulaStatus").innerHTML = `<span class="error">${esc(error.message)}</span>`;
+      } finally { button.disabled = false; }
+    };
+    $("deleteFormulaBtn").onclick = async () => {
+      const definition = activeFormulaDefinition();
+      if (!definition || definition.is_builtin) return;
+      if (!window.confirm(`确定删除公式“${definition.name}”吗？历史选股结果仍会保留。`)) return;
+      const button = $("deleteFormulaBtn");
+      button.disabled = true;
+      try {
+        await api(`/api/formulas/${definition.id}`, {method:"DELETE"});
+        activeFormulaId = null;
+        await loadFormulaLibrary();
+        $("formulaStatus").textContent = `公式“${definition.name}”已删除，历史选股结果仍然保留。`;
+      } catch (error) {
+        $("formulaStatus").innerHTML = `<span class="error">${esc(error.message)}</span>`;
+      } finally { updateFormulaControls(); }
+    };
+    $("formulaScreenBtn").onclick = runFormulaScreen;
+    $("loadFormulaRunBtn").onclick = viewFormulaRun;
+    $("formulaRunSelect").onchange = updateFormulaRunControls;
+    $("deleteFormulaRunBtn").onclick = deleteFormulaRun;
+    $("networkDiagnoseBtn").onclick = async () => {
+      const button = $("networkDiagnoseBtn");
+      const status = $("networkDiagnoseStatus");
+      button.disabled = true;
+      status.textContent = "正在测试东方财富和同花顺公开接口…";
+      try {
+        const data = await api("/api/network-diagnose");
+        const detail = (data.checks || []).map(item => `${item.name}：${item.ok ? `可用（${item.elapsed_seconds}s）` : `不可用（${item.error || "失败"}）`}`).join("；");
+        status.innerHTML = `<span class="${data.ok ? "notice" : "error"}">${esc(data.hint || "")}</span><br><span class="muted">${esc(detail)}</span>`;
+      } catch (error) {
+        status.innerHTML = `<span class="error">网络诊断失败：${esc(error.message)}</span>`;
+      } finally {
+        button.disabled = false;
+      }
+    };
+    $("historyConstituentClose").onclick = () => {
+      historyConstituentRequestSerial++;
+      $("historyConstituentPanel").hidden = true;
+      $("historyConstituentTable").innerHTML = "";
+      $("historyConstituentStatus").textContent = "点击板块名称查看成分股和 ETF。";
+    };
+    $("boardSearchInput").addEventListener("keydown", event => {
+      if (event.key === "Enter") searchBoards();
+    });
+    $("historySectorSearchBtn").onclick = findHistorySector;
+    $("historySectorSearch").addEventListener("keydown", event => {
+      if (event.key === "Enter") findHistorySector();
+    });
+    $("historySectorSearch").addEventListener("input", () => {
+      window.clearTimeout(historySearchTimer);
+      historySearchTimer = window.setTimeout(findHistorySector, 220);
+    });
+    $("catalogBtn").onclick = async () => {
+      const button = $("catalogBtn"); button.disabled = true; button.textContent = "更新中…";
+      try {
+        const outcomes = await Promise.all(selectedSectorTypes().map(async type => {
+          try {
+            return {type, result: await api("/api/catalog/sync", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({sector_type:type, provider:selectedProvider()})})};
+          } catch (error) {
+            return {type, error};
+          }
+        }));
+        const successful = outcomes.filter(item => item.result);
+        if (!successful.length) throw new Error(outcomes.map(item => `${typeLabel(item.type)}：${item.error?.message || "目录更新失败"}`).join("；"));
+        const summary = successful.map(item => `${typeLabel(item.type)} ${item.result.catalog_count} 条${item.result.catalog_source === "cache" ? "（本地缓存）" : ""}`).join("，");
+        const failures = outcomes.filter(item => item.error).map(item => `${typeLabel(item.type)}失败`).join("、");
+        $("searchStatus").textContent = `目录更新完成：${summary}${failures ? `；${failures}` : ""}；现在可以按代码或名称搜索。`;
+        if ($("boardSearchInput").value.trim()) await searchBoards();
+      } catch (error) { $("searchStatus").innerHTML = `<span class="error">${esc(error.message)}</span>`; }
+      finally { button.disabled = false; button.textContent = "更新板块目录"; }
+    };
+    $("importSnapshotBtn").onclick = async () => {
+      const button = $("importSnapshotBtn");
+      const status = $("snapshotStatus");
+      button.disabled = true; status.textContent = "导入中…";
+      try {
+        const rows = JSON.parse($("snapshotJson").value);
+        const result = await api("/api/import-snapshot", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({rows})});
+        status.textContent = `${result.message} 共 ${result.saved_rows} 行，日期 ${result.date_range[0]} 至 ${result.date_range[1]}。`;
+        await loadReport(true, true);
+      } catch (error) { status.innerHTML = `<span class="error">${esc(error.message)}</span>`; }
+      finally { button.disabled = false; }
+    };
+    function parseSnapshotCsv(text) {
+      const lines = text.trim().split(/\r?\n/).filter(Boolean);
+      if (lines.length < 2) return [];
+      const split = line => line.split(/,(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/).map(value => value.trim().replace(/^\"|\"$/g, ""));
+      const headers = split(lines[0]);
+      return lines.slice(1).map(line => {
+        const values = split(line);
+        const row = Object.fromEntries(headers.map((key, index) => [key, values[index] ?? ""]));
+        for (const key of ["rank", "rps50", "pct_change", "close", "amount", "volume"]) {
+          if (row[key] !== "") row[key] = Number(row[key]);
+        }
+        return row;
+      });
+    }
+    $("snapshotFile").onchange = async () => {
+      const file = $("snapshotFile").files[0];
+      if (!file) return;
+      const status = $("snapshotStatus");
+      status.textContent = "正在读取文件…";
+      try {
+        const text = await file.text();
+        const parsed = file.name.toLowerCase().endsWith(".csv") ? parseSnapshotCsv(text) : JSON.parse(text);
+        const rows = parsed.rows || parsed;
+        if (!Array.isArray(rows) || !rows.length) throw new Error("快照没有有效数据");
+        const result = await api("/api/import-snapshot", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({rows})});
+        status.textContent = result.message + " 共 " + result.saved_rows + " 行，日期 " + result.date_range[0] + " 至 " + result.date_range[1] + "。";
+        await loadReport(true, true);
+      } catch (error) { status.innerHTML = '<span class="error">' + esc(error.message) + '</span>'; }
+    };
+    $("clearBtn").onclick = () => {
+      $("clearConfirm").hidden = false;
+      $("confirmClearBtn").focus();
+    };
+    $("cancelClearBtn").onclick = () => {
+      $("clearConfirm").hidden = true;
+      $("clearBtn").focus();
+    };
+    $("confirmClearBtn").onclick = async () => {
+      const button = $("clearBtn");
+      const confirmButton = $("confirmClearBtn");
+      const cancelButton = $("cancelClearBtn");
+      button.disabled = true; confirmButton.disabled = true; cancelButton.disabled = true;
+      button.textContent = "清空中…";
+      try {
+        const result = await api("/api/clear", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({sector_type:"all"})});
+        currentReport = null;
+        currentReports = {};
+        renderReportDateOptions(null);
+        renderReportTabs();
+        ["dataStatus","historyTable","dailyUp","dailyDown","fiveUp","fiveDown","fiveTop100Up","tenDaySixUp","groups","trend","strategy"].forEach(id => $(id).innerHTML = `<span class="muted">已清空</span>`);
+        $("historySectorSearch").value = "";
+        $("historySectorSearchStatus").textContent = "输入板块名后会自动定位。";
+        historyConstituentRequestSerial++;
+        $("historyConstituentPanel").hidden = true;
+        $("historyConstituentTable").innerHTML = "";
+        $("historyConstituentStatus").textContent = "点击板块名称查看成分股和 ETF。";
+        $("fiveTop100LeaderStatus").textContent = "领涨股按板块成分股最新涨跌幅；数据通过公开行情接口补充。";
+        $("tenDayLeaderStatus").textContent = "领涨股按板块成分股最新涨跌幅；数据通过公开行情接口补充。";
+        $("heroReportDate").textContent = "—";
+        $("heroCoverage").textContent = "—";
+        $("heroMarketState").textContent = "—";
+        $("capitalFlowTable").innerHTML = "";
+        $("currentFlowTable").innerHTML = "";
+        $("currentFlowStatus").textContent = "本地资金流向已清空。";
+        $("capitalFlowStatus").textContent = "本地资金流向缓存已清空。";
+        localStorage.removeItem("gupiao.capitalFlowDate");
+        $("llmReport").innerHTML = `<span class="muted">尚未生成。</span>`;
+        $("status").textContent = `已清空 ${result.deleted_rows} 行本地行情数据；公式库和已保存的选股结果已保留`;
+        $("clearConfirm").hidden = true;
+        if (dualMode()) {
+          dualPanelData.local.reports = {};
+          dualPanelData.network.reports = {};
+          await loadDualReports();
+        }
+        if ($("boardSearchInput").value.trim()) await searchBoards();
+      } catch (error) { $("status").innerHTML = `<span class="error">${esc(error.message)}</span>`; }
+      finally {
+        button.disabled = false; confirmButton.disabled = false; cancelButton.disabled = false;
+        button.textContent = "清空本地数据";
+      }
+    };
+
+    $("llmBtn").onclick = async () => {
+      const button = $("llmBtn");
+      const selectedModel = selectedLlmModel();
+      const selectedModelLabel = llmModelLabel(selectedModel);
+      button.disabled = true; button.textContent = "生成中…";
+      const reportSection = $("llmSection");
+      reportSection.scrollIntoView({behavior:"smooth", block:"start"});
+      $("llmReport").innerHTML = `<span class="muted">正在调用 ${esc(selectedModelLabel)} 生成报告，请稍候…</span>`;
+      try {
+        if (!currentReport) await loadReport();
+        if (!currentReport) throw new Error("没有可用于复盘的行情数据");
+        const result = await api("/api/llm-report", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({sector_type:activeSectorType(), report_date:currentReport.report_date, model:selectedModel, provider:selectedProvider()})});
+        const truncationNote = result.truncated || result.finish_reason === "length"
+          ? `<p class="notice">本次输出达到当前模型或程序长度上限，内容可能不完整；可切换模型、缩小报告范围或稍后使用分段生成功能。</p>`
+          : "";
+        $("llmReport").innerHTML = `${renderLlmReport(result.content, result.model_label || selectedModelLabel)}${truncationNote}`;
+        reportSection.scrollIntoView({behavior:"smooth", block:"start"});
+      } catch (error) { $("llmReport").innerHTML = `<span class="error">${esc(error.message)}</span>`; }
+      finally { button.disabled = false; updateLlmButtonLabel(); }
+    };
+
+    async function initializePage() {
+      applyFontScale(localStorage.getItem("gupiao.fontScale") || "14");
+      // v1.4 restores the familiar single-source workflow.  A user can still
+      // switch to the optional dual view afterwards, but an old v1.3 dual
+      // preference must not force the father-friendly default on first launch.
+      if (localStorage.getItem("gupiao.viewModeDefaultVersion") !== "1.4.0") {
+        localStorage.setItem("gupiao.viewMode", "single");
+        localStorage.setItem("gupiao.viewModeDefaultVersion", "1.4.0");
+      }
+      const savedViewMode = localStorage.getItem("gupiao.viewMode");
+      $("viewMode").value = savedViewMode === "dual" ? "dual" : "single";
+      const dualLocal = localStorage.getItem("gupiao.dualLocalProvider");
+      const dualNetwork = localStorage.getItem("gupiao.dualNetworkProvider");
+      const dualDateMode = localStorage.getItem("gupiao.dualDateMode");
+      if (["tdx_standard","tdx"].includes(dualLocal)) $("dualLocalProvider").value = dualLocal;
+      if (["akshare","efinance","tdx_online"].includes(dualNetwork)) $("dualNetworkProvider").value = dualNetwork;
+      if (["latest","common"].includes(dualDateMode)) $("dualDateMode").value = dualDateMode;
+      dualPanelData.local.provider = $("dualLocalProvider").value;
+      dualPanelData.network.provider = $("dualNetworkProvider").value;
+      applyViewMode();
+      $("updateBtn").onclick = () => checkForUpdates(true);
+      try {
+        await Promise.all([loadFormulaLibrary(), loadFormulaRuns()]);
+      } catch (error) {
+        $("formulaStatus").innerHTML = `<span class="error">公式库读取失败：${esc(error.message)}</span>`;
+      }
+      let healthData = null;
+      try {
+        const data = await api("/api/health");
+        healthData = data;
+        const warnings = data.configuration?.warnings || [];
+        renderLlmModelOptions(data);
+        const configuredProviderLabel = data.market_provider_label || data.market_provider || "—";
+        const savedProvider = localStorage.getItem("gupiao.marketProvider");
+        const availableProviders = Array.from($("marketProvider").options).map(option => option.value);
+        const initialProvider = savedProvider && availableProviders.includes(savedProvider)
+          ? savedProvider
+          : data.market_provider || "tdx";
+        if (availableProviders.includes(initialProvider)) $("marketProvider").value = initialProvider;
+        const currentProviderLabel = providerLabel(selectedProvider()) || configuredProviderLabel;
+        $("heroProvider").textContent = currentProviderLabel;
+        const automation = data.auto_close_sync || {};
+        const openSyncText = data.auto_sync_on_open
+          ? "打开时自动同步：已开启"
+          : "打开时自动同步：未开启（可在 .env 设置 AUTO_SYNC_ON_OPEN=true）";
+        const scheduledText = automation.enabled
+          ? `定时收盘同步：已开启，${automation.run_at || "15:05"} 执行 ${((automation.sector_types || []).join("、") || "当前板块")}`
+          : "定时收盘同步：未开启（可在 .env 设置 AUTO_CLOSE_SYNC=true）";
+        $("automationStatus").textContent = `${openSyncText}；${scheduledText}`;
+        $("status").textContent = `行情源：${currentProviderLabel}｜复盘模型：${llmModelLabel(selectedLlmModel())}｜LLM：${data.ark_configured ? "已配置" : "未配置 .env"}${warnings.length ? `｜${warnings[0]}` : ""}`;
+      } catch (error) {
+        $("status").textContent = error.message;
+      }
+      void restoreCapitalFlow().then(async () => {
+        if (selectedFlowSource() !== "eastmoney" || flowUiBusy) return;
+        try {
+          const pending = await api("/api/sector-capital-flow/history/jobs");
+          const jobs = (pending.jobs || []).filter(job => selectedSectorTypes().includes(job.sector_type));
+          if (!jobs.length || flowUiBusy) return;
+          $("capitalFlowDate").value = jobs[0].date;
+          await refreshCapitalFlow(true,false,jobs.filter(job => job.date === jobs[0].date));
+        } catch (error) {
+          // Failure to read task metadata must not erase the restored data.
+          if (!flowUiBusy) $("capitalFlowStatus").textContent += `；任务恢复暂不可用：${error.message}`;
+        }
+      });
+      void loadCurrentFlow(false);
+      if (dualMode()) {
+        await loadDualReports();
+      } else if (healthData?.auto_sync_on_open === true) {
+        const synced = await runCloseSync(true);
+        if (!synced) await loadReport();
+      } else {
+        await loadReport();
+      }
+      if (healthData?.update_check_on_startup === true && healthData?.update_configured === true) {
+        // Do not make opening the dashboard wait for GitHub or another update host.
+        window.setTimeout(() => checkForUpdates(false), 1800);
+      }
+    }
+    initializePage();
+  </script>
+</body>
+</html>
