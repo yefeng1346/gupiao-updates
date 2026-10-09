@@ -1,10 +1,10 @@
 {
-  "version": "1.6.0",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-09-daily-archive-v1.6.0.zip",
+  "version": "1.6.1",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-10-flow-screen-v1.6.1.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.6.0/gupiao-windows-2026-10-09-daily-archive-v1.6.0.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.6.1/gupiao-windows-2026-10-10-flow-screen-v1.6.1.zip"
   ],
-  "sha256": "79e22ed92234343a78a57ba02caf8b0cce03918e8857cb6ba942fb4e6e13fa66",
-  "published_at": "2026-10-09",
-  "notes": "资金流向改为完整当天榜单加本地逐日档案：修复来源停在15:00无法归档；结合实际采集时间确认收盘，旧盘中数据不变成收盘数据。软件打开时15:10后自动采集并复核，多窗口租约去重；修订保留旧值。一键更新不再等待历史接口，10日榜仅使用最近10个交易日完整记录，缺失不当作零。显示缓存清理与历史删除分开，删除前备份。保留当前榜样式，文件导入和不稳定历史补缺移入高级。集中历史库校验与多地址同步能力已加入，但未确认来源分发授权前不启用公共采集。同花顺实测403，未冒充可用联网备用源；通达信普通日线不含主力资金。沿用免费GitHub断点续传、哈希校验、回滚更新；升级保留Key、配置、数据库、公式、选股结果。"
+  "sha256": "a7742fc5b7d57d6610d506eecd0a30adce348e5762caa28678ba21f37bd31b83",
+  "published_at": "2026-10-10",
+  "notes": "资金流入筛选可设置“1～60个交易日内至少多少天主力净流入大于0”，默认10/6；修改条件只重新计算本地逐日档案，设置重开保留，缺失不计零，不拿更早日期凑数。高级入口改为粗体。第7栏名次前进榜的领涨股替换为5日资金净流入：截至报告日期最近5个交易日的东方财富板块主力净流入合计；非东方财富板块仅按唯一同名匹配并标明参考口径，未匹配或不足5天不显示部分合计。其他栏领涨股、排名筛选及排序不变。升级保留Key、配置、历史数据库、公式和选股结果；公开包不含私有凭据。"
 }
