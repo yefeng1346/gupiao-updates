@@ -1,10 +1,10 @@
 {
-  "version": "1.6.2",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-10-three-day-flow-v1.6.2.zip",
+  "version": "1.6.3",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-10-candidates-v1.6.3.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.6.2/gupiao-windows-2026-10-10-three-day-flow-v1.6.2.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.6.3/gupiao-windows-2026-10-10-candidates-v1.6.3.zip"
   ],
-  "sha256": "3c57ef955a5cc6f5541535c6c196207cd9d04ab452c7d99531cfc1c3e71d433f",
+  "sha256": "b5a8a62324aa48c180398fd2f757eb92a6dd730f3f63db93b019625a3bd47468",
   "published_at": "2026-10-10",
-  "notes": "第7栏名次前进榜改为3日资金净流入：匹配上方已保存的东方财富逐日板块主力资金，合计截至报告日期最近3个交易日。完整3天即可计算，无需5天；缺失不计零，不用更早日期凑数，不从5日累计值推算。非东方财富板块仅按唯一同名匹配并标明参考口径；其他栏、名次筛选和排序不变。保留可调整的资金流入筛选天数，以及Key、配置、历史数据库、公式和选股结果。"
+  "notes": "新增综合候选股票与AI解读：程序按板块排名/RPS、主线、已保存三日板块资金和通达信个股日线筛选，最多10只；右侧逐只加载现有模型的证据解读。支持不调用AI、取消、单只重试、关闭重开恢复及相同事实缓存，多窗口避免重复调用。AI失败不丢候选，日期不符和历史不足明确提示；须先在通达信补齐最新个股日线。候选和得分不是买卖指令或上涨概率；财务、公告与可成交性未核验。保留Key、配置、历史数据库、公式和选股结果。"
 }
