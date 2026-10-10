@@ -111,6 +111,19 @@ def run_smoke_test() -> int:
     server, thread, port = _start_api()
     try:
         _console_print(f"desktop api ready: http://{HOST}:{port}/")
+        # Exercise the real install boundary in every packaged smoke test.
+        # A fresh process has no prepared archive: it must reject safely, not
+        # raise HTTP 500. This never downloads or launches an installer.
+        with urllib.request.urlopen(f"http://{HOST}:{port}/api/update/status", timeout=5) as response:
+            assert json.loads(response.read())["status"] == "idle"
+        request = urllib.request.Request(f"http://{HOST}:{port}/api/update/install", data=b"", method="POST")
+        try:
+            urllib.request.urlopen(request, timeout=5).close()
+            raise RuntimeError("更新安装接口在没有准备安装包时未拒绝请求")
+        except urllib.error.HTTPError as exc:
+            payload = json.loads(exc.read())
+            if exc.code != 409 or not payload.get("detail"):
+                raise RuntimeError(f"更新安装接口冒烟测试失败：HTTP {exc.code}") from exc
         return 0
     finally:
         _stop_api(server, thread)

@@ -470,7 +470,7 @@ def update_cancel():
 
 @app.post("/api/update/install")
 def update_install():
-    if _flow_history_jobs.is_running():
+    if _flow_active_operations or _flow_jobs.is_running():
         raise HTTPException(status_code=409,detail="请先取消正在执行的资金更新，再安装软件更新")
     try:
         result = UPDATE_PREPARATION.install(settings.root_dir,os.getpid())
