@@ -6,7 +6,7 @@ from typing import Any
 import pandas as pd
 
 from .db import Database
-from .flow_summary import attach_five_day_flow
+from .flow_summary import attach_three_day_flow
 
 
 MODULE_TITLES = {
@@ -328,7 +328,7 @@ def build_report(
         "module7_trend": module7,
         "module8_strategy": module8,
     }
-    attach_five_day_flow(database, sector_type, selected_date, module_ten_day)
+    attach_three_day_flow(database, sector_type, selected_date, module_ten_day)
     result["llm_input"] = _llm_input_compact(result)
     return result
 

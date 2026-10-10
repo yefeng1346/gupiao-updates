@@ -566,7 +566,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
     <section class="card">
       <h2>7. 最近10天至少有6天名次前进榜</h2>
       <p class="muted">取最近10个可用交易日，比较9个相邻区间；要求排名严格前进不少于6天。缺失数据的区间不计入前进天数，窗口首日或报告日缺少排名的板块不入榜。点击任意数据行可固定高亮，再点一次取消；点击其他行会切换高亮。</p>
-      <p id="tenDayLeaderStatus" class="muted">5日资金净流入：截至报告日期最近5个交易日的东方财富板块主力净流入合计；不足5天不显示部分合计。</p>
+      <p id="tenDayLeaderStatus" class="muted">3日资金净流入：截至报告日期最近3个交易日的东方财富板块主力净流入合计；不足3天不显示部分合计。</p>
       <div id="tenDaySixUp"></div>
     </section>
 
@@ -1460,7 +1460,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
         {key:"rank_change_10d_label",label:"累计名次变化",render:(v,r)=>label(r,"rank_change_10d_label")},
         {key:"rank_path_10d",label:"10日名次轨迹",render:v=>esc(v || "-")},
         {key:"rps_change_10d",label:"RPS变化",render:fmt}, {key:"return_10d",label:"10日涨幅",render:pct}, {key:"rank",label:"现排名",render:v=>esc(v)},
-        {key:"five_day_main_net_inflow",label:"5日资金净流入",render:(_,r)=>fiveDayFlowCell(r)}
+        {key:"three_day_main_net_inflow",label:"3日资金净流入",render:(_,r)=>threeDayFlowCell(r)}
       ];
       if (tenDayRows.length) {
         $("tenDaySixUp").innerHTML = miniTable(tenDayRows, tenDayFields);
@@ -1474,7 +1474,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
           : `最近10个交易日没有板块达到至少${minAdvanceDays}天名次前进。`;
         $("tenDaySixUp").innerHTML = `<span class="muted">${esc(emptyHint)}</span>`;
       }
-      $("tenDayLeaderStatus").textContent = fiveDayFlowStatus(tenDayModule);
+      $("tenDayLeaderStatus").textContent = threeDayFlowStatus(tenDayModule);
       renderGroups(report);
       renderTrend(report);
       renderStrategy(report);
@@ -1513,23 +1513,23 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
       return `<span class="${cls}">${prefix}${number.toFixed(2)}%</span>`;
     }
 
-    function fiveDayFlowCell(row) {
-      const reference = row.five_day_flow_match === "unique_name" ? "东方财富同名板块参考；成分范围可能不同。" : "东方财富板块主力资金。";
-      const title = `${reference}代码 ${row.five_day_flow_code || "未匹配"}；截至报告日期最近5个交易日合计。`;
-      if (row.five_day_flow_status === "complete" && row.five_day_main_net_inflow != null) {
-        return `<span title="${esc(title)}">${flowAmount(row.five_day_main_net_inflow)}</span>`;
+    function threeDayFlowCell(row) {
+      const reference = row.three_day_flow_match === "unique_name" ? "东方财富同名板块参考；成分范围可能不同。" : "东方财富板块主力资金。";
+      const title = `${reference}代码 ${row.three_day_flow_code || "未匹配"}；截至报告日期最近3个交易日合计。`;
+      if (row.three_day_flow_status === "complete" && row.three_day_main_net_inflow != null) {
+        return `<span title="${esc(title)}">${flowAmount(row.three_day_main_net_inflow)}</span>`;
       }
-      const reason = row.five_day_flow_status === "unmatched" ? "未匹配"
-        : row.five_day_flow_status === "not_closed" ? "尚未收盘"
-        : row.five_day_flow_status === "calendar_unknown" ? "交易日未确认"
-        : `数据不足（${Number(row.five_day_flow_available_days) || 0}/5天）`;
+      const reason = row.three_day_flow_status === "unmatched" ? "未匹配"
+        : row.three_day_flow_status === "not_closed" ? "尚未收盘"
+        : row.three_day_flow_status === "calendar_unknown" ? "交易日未确认"
+        : `数据不足（${Number(row.three_day_flow_available_days) || 0}/3天）`;
       return `<span class="muted" title="${esc(title)}">${esc(reason)}</span>`;
     }
 
-    function fiveDayFlowStatus(module) {
-      const meta = module.five_day_flow || {};
+    function threeDayFlowStatus(module) {
+      const meta = module.three_day_flow || {};
       const days = meta.window_dates || [];
-      return `5日资金净流入：东方财富主力净流入合计；${days.length ? `${days[0]} 至 ${days[days.length-1]}；` : ""}完整覆盖 ${meta.complete_boards || 0}/${meta.total_boards ?? (module.rows || []).length} 个板块。仅读取本地收盘档案，更新资金数据后重新读取报告。非东方财富板块为唯一同名参考，成分范围可能不同；未匹配或不足5天不显示部分合计。`;
+      return `3日资金净流入：东方财富主力净流入合计；${days.length ? `${days[0]} 至 ${days[days.length-1]}；` : ""}完整覆盖 ${meta.complete_boards || 0}/${meta.total_boards ?? (module.rows || []).length} 个板块。仅读取本地收盘档案，更新资金数据后重新读取报告。非东方财富板块为唯一同名参考，成分范围可能不同；未匹配或不足3天不显示部分合计。`;
     }
 
     function localDateInputValue() {
@@ -2142,7 +2142,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
           <section class="dual-source-panel-section"><h4>最近5日走弱 TOP 榜</h4><div id="${prefix}-fiveDown"></div></section>
         </div>
         <section class="dual-source-panel-section"><h4>百名内最近5日强势前进 TOP 榜</h4><p id="${prefix}-fiveTop100LeaderStatus" class="muted">领涨股按板块成分股最新涨跌幅。</p><div id="${prefix}-fiveTop100Up"></div></section>
-        <section class="dual-source-panel-section"><h4>最近10天至少有6天名次前进榜</h4><p id="${prefix}-tenDayLeaderStatus" class="muted">5日资金净流入：东方财富板块主力净流入合计。</p><div id="${prefix}-tenDaySixUp"></div></section>
+        <section class="dual-source-panel-section"><h4>最近10天至少有6天名次前进榜</h4><p id="${prefix}-tenDayLeaderStatus" class="muted">3日资金净流入：东方财富板块主力净流入合计。</p><div id="${prefix}-tenDaySixUp"></div></section>
         <details open><summary>趋势与策略</summary><div id="${prefix}-groups"></div><div id="${prefix}-trend"></div><div id="${prefix}-strategy"></div></details>
       </article>`;
     }
@@ -2279,7 +2279,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
         {key:"rank_change_10d_label",label:"累计名次变化",render:(v,r)=>label(r,"rank_change_10d_label")},
         {key:"rank_path_10d",label:"10日名次轨迹",render:v=>esc(v || "-")},
         {key:"rps_change_10d",label:"RPS变化",render:fmt}, {key:"return_10d",label:"10日涨幅",render:pct}, {key:"rank",label:"现排名",render:v=>esc(v)},
-        {key:"five_day_main_net_inflow",label:"5日资金净流入",render:(_,r)=>fiveDayFlowCell(r)}
+        {key:"three_day_main_net_inflow",label:"3日资金净流入",render:(_,r)=>threeDayFlowCell(r)}
       ];
       if (tenRows.length) {
         $(`dual-${panelKey}-tenDaySixUp`).innerHTML = miniTable(tenRows, tenFields);
@@ -2291,7 +2291,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
         const hint = availableDays < requiredDays ? `数据不足：当前只有 ${availableDays} 个可用交易日，需要 ${requiredDays} 个交易日。` : `最近10个交易日没有板块达到至少${minAdvanceDays}天名次前进。`;
         $(`dual-${panelKey}-tenDaySixUp`).innerHTML = `<span class="muted">${esc(hint)}</span>`;
       }
-      $(`dual-${panelKey}-tenDayLeaderStatus`).textContent = fiveDayFlowStatus(tenModule);
+      $(`dual-${panelKey}-tenDayLeaderStatus`).textContent = threeDayFlowStatus(tenModule);
       dualRenderGroups(report, `dual-${panelKey}-groups`);
       dualRenderTrend(report, `dual-${panelKey}-trend`);
       dualRenderStrategy(report, `dual-${panelKey}-strategy`);
@@ -2778,7 +2778,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
         $("historyConstituentTable").innerHTML = "";
         $("historyConstituentStatus").textContent = "点击板块名称查看成分股和 ETF。";
         $("fiveTop100LeaderStatus").textContent = "领涨股按板块成分股最新涨跌幅；数据通过公开行情接口补充。";
-        $("tenDayLeaderStatus").textContent = "5日资金净流入：东方财富板块主力净流入合计；重新读取报告后按报告日期统计。";
+        $("tenDayLeaderStatus").textContent = "3日资金净流入：东方财富板块主力净流入合计；重新读取报告后按报告日期统计。";
         $("heroReportDate").textContent = "—";
         $("heroCoverage").textContent = "—";
         $("heroMarketState").textContent = "—";

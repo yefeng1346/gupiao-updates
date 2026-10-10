@@ -8,10 +8,10 @@ from unittest.mock import patch
 from app.analytics import build_report
 from app.db import Database
 from app.flow_calendar import trading_window
-from app.flow_summary import attach_five_day_flow
+from app.flow_summary import attach_three_day_flow
 
 
-class FiveDaySummaryTests(unittest.TestCase):
+class ThreeDaySummaryTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
         self.db = Database(Path(self.temp.name)/"summary.db")
@@ -28,49 +28,59 @@ class FiveDaySummaryTests(unittest.TestCase):
 
     def summarize(self,rows,day="2026-09-30",kind="concept"):
         module = {"rows":rows}
-        attach_five_day_flow(self.db,kind,day,module)
+        attach_three_day_flow(self.db,kind,day,module)
         return module
 
     def test_exact_code_and_unique_name_match_same_sum(self):
         result = self.summarize([{"sector_code":"BK0001","sector_name":"人形机器人"},
             {"sector_code":"880729","sector_name":"人形机器人"}, {"sector_code":"880123","sector_name":"工业软件"}])
-        self.assertEqual([r["five_day_main_net_inflow"] for r in result["rows"]],[70,70,-50])
-        self.assertEqual(result["rows"][0]["five_day_flow_match"],"code")
-        self.assertEqual(result["rows"][1]["five_day_flow_match"],"unique_name")
-        self.assertEqual(result["five_day_flow"]["window_dates"],self.days)
-        self.assertEqual(result["five_day_flow"]["complete_boards"],3)
+        self.assertEqual([r["three_day_main_net_inflow"] for r in result["rows"]],[20,20,-30])
+        self.assertEqual(result["rows"][0]["three_day_flow_match"],"code")
+        self.assertEqual(result["rows"][1]["three_day_flow_match"],"unique_name")
+        self.assertEqual(result["three_day_flow"]["window_dates"],self.days[-3:])
+        self.assertEqual(result["three_day_flow"]["complete_boards"],3)
 
     def test_ambiguous_or_fuzzy_names_are_not_matched(self):
         rows = [{"sector_code":"880001","sector_name":name} for name in ("重复名称","机器人","工业软件概念")]
         result = self.summarize(rows)
-        self.assertTrue(all(row["five_day_flow_status"]=="unmatched" for row in result["rows"]))
-        self.assertTrue(all(row["five_day_main_net_inflow"] is None for row in rows))
+        self.assertTrue(all(row["three_day_flow_status"]=="unmatched" for row in result["rows"]))
+        self.assertTrue(all(row["three_day_main_net_inflow"] is None for row in rows))
 
     def test_missing_middle_day_not_partial_total_or_older_date_substitution(self):
         with self.db.connection() as conn:
             conn.execute("DELETE FROM sector_capital_flow_daily WHERE sector_code='BK0001' AND trade_date=?",(self.days[2],))
         self.db.upsert_sector_capital_flow_daily([{"sector_type":"concept","sector_code":"BK0001","sector_name":"人形机器人","trade_date":"2026-09-21","main_net_inflow":999}])
         result = self.summarize([{"sector_code":"BK0001"}])
-        self.assertEqual(result["rows"][0]["five_day_flow_available_days"],4)
-        self.assertIsNone(result["rows"][0]["five_day_main_net_inflow"])
+        self.assertEqual(result["rows"][0]["three_day_flow_available_days"],2)
+        self.assertIsNone(result["rows"][0]["three_day_main_net_inflow"])
 
     def test_zero_total_is_a_valid_complete_value(self):
         self.db.upsert_sector_capital_flow_daily([{"sector_type":"concept","sector_code":"BK0001","sector_name":"人形机器人","trade_date":day,"main_net_inflow":0} for day in self.days])
         row = self.summarize([{"sector_code":"BK0001"}])["rows"][0]
-        self.assertEqual(row["five_day_main_net_inflow"],0)
-        self.assertEqual(row["five_day_flow_status"],"complete")
+        self.assertEqual(row["three_day_main_net_inflow"],0)
+        self.assertEqual(row["three_day_flow_status"],"complete")
+
+    def test_only_latest_three_days_are_required_from_five_day_archive(self):
+        with self.db.connection() as conn:
+            conn.execute("DELETE FROM sector_capital_flow_daily WHERE trade_date IN (?, ?)",tuple(self.days[:2]))
+        result = self.summarize([{"sector_code":"880729","sector_name":"人形机器人"}])
+        row = result["rows"][0]
+        self.assertEqual(row["three_day_flow_available_days"],3)
+        self.assertEqual(row["three_day_main_net_inflow"],20)
+        self.assertEqual(row["three_day_flow_status"],"complete")
+        self.assertEqual(result["three_day_flow"]["window_dates"],self.days[-3:])
 
     def test_report_date_and_sector_type_are_not_substituted(self):
         row = self.summarize([{"sector_code":"BK0001"}],"2026-09-29")["rows"][0]
-        self.assertIsNone(row["five_day_main_net_inflow"])
+        self.assertEqual(row["three_day_main_net_inflow"],-20)
         row = self.summarize([{"sector_code":"BK0001"}],kind="industry")["rows"][0]
-        self.assertEqual(row["five_day_flow_status"],"unmatched")
+        self.assertEqual(row["three_day_flow_status"],"unmatched")
 
     def test_intraday_is_not_replaced_with_yesterdays_close(self):
         with patch("app.flow_summary.shanghai_now",return_value=datetime.fromisoformat("2026-09-30T14:00:00+08:00")):
             result = self.summarize([{"sector_code":"BK0001"}])
-        self.assertEqual(result["rows"][0]["five_day_flow_status"],"not_closed")
-        self.assertEqual(result["five_day_flow"]["window_dates"],[])
+        self.assertEqual(result["rows"][0]["three_day_flow_status"],"not_closed")
+        self.assertEqual(result["three_day_flow"]["window_dates"],[])
 
     def test_analytics_report_has_real_supplement_and_keeps_rank_rule(self):
         for dataset,code in (("tdx_standard","880729"),("akshare","BK0001")):
@@ -83,7 +93,7 @@ class FiveDaySummaryTests(unittest.TestCase):
             module = report["modules"]["ten_day_six_up"]
             self.assertEqual(len(module["rows"]),1)
             self.assertEqual(module["rows"][0]["up_days_10d"],9)
-            self.assertEqual(module["rows"][0]["five_day_main_net_inflow"],70)
+            self.assertEqual(module["rows"][0]["three_day_main_net_inflow"],20)
             self.assertIs(module,report["module7_ten_day_six_up"])
             self.assertEqual(module["min_advance_days"],6)
             # Exercise the production HTTP boundary without running startup jobs
@@ -95,9 +105,9 @@ class FiveDaySummaryTests(unittest.TestCase):
                 response = LocalAsgiClient(app_main.app).get("/api/report",{"sector_type":"concept","date":"2026-09-30","provider":dataset})
             self.assertEqual(response.status_code,200)
             api_rows = response.json()["modules"]["ten_day_six_up"]["rows"]
-            self.assertEqual(api_rows[0]["five_day_main_net_inflow"],70)
+            self.assertEqual(api_rows[0]["three_day_main_net_inflow"],20)
         restored = self.summarize([{"sector_code":"BK0001"}])
-        self.assertEqual(restored["five_day_flow"]["complete_boards"],1)
+        self.assertEqual(restored["three_day_flow"]["complete_boards"],1)
 
 
 if __name__ == "__main__": unittest.main()
