@@ -1,10 +1,10 @@
 {
-  "version": "1.6.4",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-10-update-install-fix-v1.6.4.zip",
+  "version": "1.6.5",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-11-candidate-history-v1.6.5.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.6.4/gupiao-windows-2026-10-10-update-install-fix-v1.6.4.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.6.5/gupiao-windows-2026-10-11-candidate-history-v1.6.5.zip"
   ],
-  "sha256": "37ef70f1f5f4a1ad7a3ae96d5a509792149315b3d2071bad4d0227755545224b",
-  "published_at": "2026-10-10",
-  "notes": "修复下载完成后安装接口因不存在的任务变量导致HTTP 500。资金任务运行时安全提示等待，未准备安装包或文件占用时不退出原版本；新增安装接口回归和打包EXE真实接口冒烟测试。保留1.6.3候选股票与AI解读、资金筛选等功能，以及Key、配置、历史数据、公式和选股结果。受影响旧版本请从GitHub Release下载完整ZIP，关闭同目录所有窗口后覆盖程序；不要删除.env、data和reports。"
+  "sha256": "853be7f04721dcd4eb29eaafa2eca1a858a450e80c85f0f56183c4be23b4bd20",
+  "published_at": "2026-10-11",
+  "notes": "新增历史候选验证：按保存日期查看原名单，观察后续5、10、20个交易日的未复权价格涨跌、收盘回撤和完整样本上涨占比。不重新选股或调用AI；缺行情、停牌和观察期未满不参与统计。保留Key、配置、历史数据、公式和选股结果。推荐从GitHub Release下载完整ZIP，关闭软件后覆盖两个EXE和完整_internal目录；不要删除.env、data和reports。"
 }
