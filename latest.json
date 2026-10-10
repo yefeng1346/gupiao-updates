@@ -1,10 +1,10 @@
 {
-  "version": "1.6.1",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-10-flow-screen-v1.6.1.zip",
+  "version": "1.6.2",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-10-three-day-flow-v1.6.2.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.6.1/gupiao-windows-2026-10-10-flow-screen-v1.6.1.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.6.2/gupiao-windows-2026-10-10-three-day-flow-v1.6.2.zip"
   ],
-  "sha256": "a7742fc5b7d57d6610d506eecd0a30adce348e5762caa28678ba21f37bd31b83",
+  "sha256": "3c57ef955a5cc6f5541535c6c196207cd9d04ab452c7d99531cfc1c3e71d433f",
   "published_at": "2026-10-10",
-  "notes": "资金流入筛选可设置“1～60个交易日内至少多少天主力净流入大于0”，默认10/6；修改条件只重新计算本地逐日档案，设置重开保留，缺失不计零，不拿更早日期凑数。高级入口改为粗体。第7栏名次前进榜的领涨股替换为5日资金净流入：截至报告日期最近5个交易日的东方财富板块主力净流入合计；非东方财富板块仅按唯一同名匹配并标明参考口径，未匹配或不足5天不显示部分合计。其他栏领涨股、排名筛选及排序不变。升级保留Key、配置、历史数据库、公式和选股结果；公开包不含私有凭据。"
+  "notes": "第7栏名次前进榜改为3日资金净流入：匹配上方已保存的东方财富逐日板块主力资金，合计截至报告日期最近3个交易日。完整3天即可计算，无需5天；缺失不计零，不用更早日期凑数，不从5日累计值推算。非东方财富板块仅按唯一同名匹配并标明参考口径；其他栏、名次筛选和排序不变。保留可调整的资金流入筛选天数，以及Key、配置、历史数据库、公式和选股结果。"
 }
