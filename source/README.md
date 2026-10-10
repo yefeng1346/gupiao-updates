@@ -36,7 +36,7 @@ cd D:\Codes\gupiao
 - 候选和成功解读保存到本机；重开只恢复结果，不自动发起付费请求。相同事实与模型复用缓存，多窗口共享任务与请求锁。取消不能撤销已发送的模型请求，也不能退还可能产生的费用。
 - 暂未核验财务、公告、复权口径与下一交易日可成交性；名单仅为观察候选，分数不是上涨概率，不构成买卖指令。
 
-验收：`python -m unittest discover -s tests -p 'test_*.py'`；`node tests/test_candidate_ui.cjs`。`tests/candidate_browser_fixture.py` 使用隔离数据库、模拟行情和模拟AI，在端口59517提供真实网页/API验收，不会调用付费模型。功能尚未单独打包发布。
+验收：`python -m unittest discover -s tests -p 'test_*.py'`；`node tests/test_candidate_ui.cjs`。`tests/candidate_browser_fixture.py` 使用隔离数据库、模拟行情和模拟AI，在端口59517提供真实网页/API验收，不会调用付费模型。功能已随1.6.3发布，用户可通过软件检查更新升级。
 
 ## 固定十个复盘模块（规则说明）
 
