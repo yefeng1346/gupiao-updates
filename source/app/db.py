@@ -219,6 +219,23 @@ class Database:
 
                 CREATE INDEX IF NOT EXISTS idx_formula_runs_created
                     ON formula_runs (created_at DESC);
+
+                CREATE TABLE IF NOT EXISTS candidate_runs (
+                    id TEXT PRIMARY KEY, request_key TEXT NOT NULL,
+                    provider TEXT NOT NULL, sector_type TEXT NOT NULL,
+                    state_json TEXT NOT NULL, created_at REAL NOT NULL,
+                    updated_at REAL NOT NULL, cancel_requested INTEGER NOT NULL DEFAULT 0
+                );
+                CREATE INDEX IF NOT EXISTS idx_candidate_runs_latest
+                    ON candidate_runs(provider,sector_type,created_at DESC);
+                CREATE INDEX IF NOT EXISTS idx_candidate_runs_request
+                    ON candidate_runs(request_key,created_at DESC);
+                CREATE TABLE IF NOT EXISTS candidate_ai_cache (
+                    cache_key TEXT PRIMARY KEY, content_json TEXT NOT NULL, created_at REAL NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS candidate_ai_leases (
+                    cache_key TEXT PRIMARY KEY, owner TEXT NOT NULL, expires_at REAL NOT NULL
+                );
                 """
             )
             # Existing installations were created before the source columns

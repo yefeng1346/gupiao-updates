@@ -61,6 +61,12 @@
     .history-sector-link:hover:not(:disabled) { color:var(--blue); background:transparent; text-decoration:underline; transform:none; }
     .history-sector-link:focus-visible { outline:3px solid #87a0ff; outline-offset:3px; border-radius:4px; }
     table { width:100%; border-collapse:collapse; white-space:nowrap; }
+    #candidateResults table { min-width:900px; white-space:normal; table-layout:fixed; }
+    #candidateResults th,#candidateResults td { text-align:left; vertical-align:top; overflow-wrap:anywhere; }
+    #candidateResults th:first-child { width:18%; }
+    #candidateResults th:nth-child(2) { width:37%; }
+    #candidateResults small { display:block; margin-top:4px; color:var(--muted); }
+    #candidateResults li { margin-bottom:8px; }
     th,td { padding:9px 10px; border-bottom:1px solid var(--line); text-align:right; vertical-align:top; }
     th:first-child,td:first-child,th:nth-child(2),td:nth-child(2) { text-align:left; }
     tbody tr:hover { background:#f8faff; }
@@ -590,7 +596,28 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
       <div id="llmReport" class="muted" aria-live="polite">尚未生成。</div>
     </section>
     </div>
+
+    <section id="candidateSection" class="card">
+      <h2>综合候选股票与AI解读</h2>
+      <p class="muted">一键先生成规则候选，再逐只加载AI解读。最多10只，使用上方选择的模型和现有Key；AI会产生调用费用，相同事实和模型的成功解读会复用本地缓存。未配置AI或调用失败不影响候选。候选不是买入推荐或上涨概率。</p>
+      <p class="muted">需要最近收盘板块报告、对应成分及通达信个股日线；日期不一致、历史不足、名称未知和风险名称剔除。板块资金不代表个股资金，财务/公告及下一日可成交性未核验。只使用已保存资金，不自动补历史。</p>
+      <div class="capital-flow-controls">
+        <label>板块报告来源<select id="candidateProvider"><option value="akshare">AkShare（网络报告）</option><option value="efinance">efinance</option><option value="tdx_standard">通达信本地</option><option value="tdx_online">通达信网络</option><option value="tdx">通达信协议/本地</option></select></label>
+        <label>板块范围<select id="candidateType"><option value="concept">概念板块</option><option value="industry">行业板块</option></select></label>
+        <label>候选数量<input id="candidateLimit" type="number" min="1" max="10" step="1" value="10" /></label>
+        <label>最低日成交额（万元）<input id="candidateAmount" type="number" min="100" max="100000" step="100" value="2000" /></label>
+        <label><input id="candidateRequireFlow" type="checkbox" />必须有完整3日正净流入（板块参考）</label>
+        <label><input id="candidateUseFormula" type="checkbox" />叠加已选技术公式（不支持财务公式）</label>
+        <label><input id="candidateUseAI" type="checkbox" checked />自动AI解读（最多10只）</label>
+        <button id="candidateGenerate" class="primary" type="button">生成候选股票＋AI解读</button>
+        <button id="candidateCancel" class="secondary" type="button" hidden>取消后续任务</button>
+      </div>
+      <p id="candidateStatus" class="muted" role="status" aria-live="polite">尚未生成；重开会恢复本机最近结果，不自动收费调用AI。</p>
+      <div id="candidateResults"></div>
+    </section>
+
   </main>
+  <script src="/static/candidates.js" defer></script>
   <script>
     const $ = (id) => document.getElementById(id);
     let currentReport = null;

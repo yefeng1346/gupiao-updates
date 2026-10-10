@@ -32,11 +32,12 @@ from app.flow_archive import DailyCollector
 from app.config import ensure_directories, settings
 from app.db import Database
 from app.llm import ArkClient
+from app.candidates import CandidateService, strict_members
 from app.providers.akshare_provider import AkShareProvider
 from app.providers.efinance_provider import EFinanceProvider
 from app.providers.tdx_provider import TdxOnlineProvider, TdxProvider, TdxStandardProvider
 from app.sector_leaders import fetch_sector_constituents, fetch_sector_leaders
-from app.formula_screen import DEFAULT_FORMULA, screen_formula, validate_formula
+from app.formula_screen import DEFAULT_FORMULA, screen_formula, validate_formula, _enrich_names
 from app.snapshot_import import SnapshotValidationError, normalize_snapshot_rows
 from app.update_service import (
     CURRENT_VERSION,
@@ -183,6 +184,24 @@ class LLMRequest(BaseModel):
 
 class ClearRequest(BaseModel):
     sector_type: Literal["concept", "industry", "all"] = "all"
+
+
+class CandidateRequest(BaseModel):
+    provider: ProviderName | None = None
+    sector_type: Literal["concept", "industry"] = "concept"
+    max_results: int = Field(default=10, ge=1, le=10)
+    board_limit: int = Field(default=5, ge=1, le=5)
+    min_amount: float = Field(default=20000000, ge=1000000, le=1000000000, allow_inf_nan=False)
+    require_flow: bool = False
+    ai_enabled: bool = True
+    model: str | None = Field(default=None, max_length=200)
+    formula_id: int | None = Field(default=None, ge=1)
+    timeframe: Literal["daily", "weekly"] = "daily"
+
+
+class CandidateRetryRequest(BaseModel):
+    code: str = Field(pattern=r"^\d{6}$")
+    model: str | None = Field(default=None, max_length=200)
 
 
 class SnapshotRowRequest(BaseModel):
@@ -1106,6 +1125,71 @@ def llm_report(request: LLMRequest):
         "finish_reason": client.last_finish_reason,
         "truncated": client.last_finish_reason == "length",
     }
+
+
+_candidate_service: CandidateService | None = None
+
+
+def candidate_service() -> CandidateService:
+    global _candidate_service
+    if _candidate_service is None or _candidate_service.database is not database:
+        _candidate_service = CandidateService(
+            database, make_report,
+            lambda board, kind, source: call_with_timeout(lambda: strict_members(board, kind, source), 20),
+            lambda codes: call_with_timeout(lambda: _enrich_names(codes), 20),
+        )
+    return _candidate_service
+
+
+def candidate_llm_client(model: str) -> ArkClient:
+    return ArkClient(llm_api_key_for_model(model), settings.ark_base_url, model,
+                     min(settings.ark_timeout_seconds, 45), settings.ark_use_env_proxy,
+                     "disabled", 1200, llm_key_hint_for_model(model))
+
+
+@app.post("/api/candidates/generate")
+def start_candidates(request: CandidateRequest):
+    options = request.model_dump()
+    options["provider"] = normalize_provider_name(request.provider)
+    options["model"] = normalize_llm_model(request.model) if request.ai_enabled else "disabled"
+    options["formula"] = None
+    if request.formula_id is not None:
+        formula = database.get_formula(request.formula_id)
+        if not formula: raise HTTPException(status_code=404, detail="所选公式不存在")
+        options["formula"] = formula["formula"]
+        options["formula_name"] = formula["name"]
+    try:
+        return candidate_service().start(options, candidate_llm_client)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@app.get("/api/candidates/latest")
+def latest_candidates(provider_name: ProviderName | None = Query(default=None, alias="provider"),
+                      sector_type: Literal["concept", "industry"] = "concept"):
+    return {"run": candidate_service().latest(normalize_provider_name(provider_name), sector_type)}
+
+
+@app.get("/api/candidates/runs/{run_id}")
+def read_candidate_run(run_id: str):
+    run = candidate_service().get(run_id)
+    if not run: raise HTTPException(status_code=404, detail="候选记录不存在")
+    return run
+
+
+@app.post("/api/candidates/runs/{run_id}/cancel")
+def cancel_candidate_run(run_id: str):
+    if not candidate_service().get(run_id): raise HTTPException(status_code=404, detail="候选记录不存在")
+    candidate_service().cancel(run_id)
+    return {"ok": True}
+
+
+@app.post("/api/candidates/runs/{run_id}/interpret")
+def retry_candidate_ai(run_id: str, request: CandidateRetryRequest):
+    try:
+        return candidate_service().retry(run_id, request.code, candidate_llm_client, normalize_llm_model(request.model))
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
 
 
 @app.get("/api/quote")
