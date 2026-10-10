@@ -38,6 +38,7 @@ from app.providers.efinance_provider import EFinanceProvider
 from app.providers.tdx_provider import TdxOnlineProvider, TdxProvider, TdxStandardProvider
 from app.sector_leaders import fetch_sector_constituents, fetch_sector_leaders
 from app.formula_screen import DEFAULT_FORMULA, screen_formula, validate_formula, _enrich_names
+from app.candidate_history import list_history, evaluate_history
 from app.snapshot_import import SnapshotValidationError, normalize_snapshot_rows
 from app.update_service import (
     CURRENT_VERSION,
@@ -1175,6 +1176,25 @@ def read_candidate_run(run_id: str):
     run = candidate_service().get(run_id)
     if not run: raise HTTPException(status_code=404, detail="候选记录不存在")
     return run
+
+
+@app.get("/api/candidates/history")
+def candidate_history(provider_name: ProviderName | None = Query(default=None, alias="provider"),
+                      sector_type: Literal["concept", "industry"] = "concept", saved_date: str | None = None):
+    try:
+        return {"runs": list_history(database, normalize_provider_name(provider_name), sector_type, saved_date)}
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="保存日期格式应为YYYY-MM-DD") from exc
+
+
+@app.get("/api/candidates/runs/{run_id}/performance")
+def candidate_performance(run_id: str, days: int = Query(default=5, ge=1, le=20)):
+    try:
+        return evaluate_history(database, run_id, days)
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @app.post("/api/candidates/runs/{run_id}/cancel")

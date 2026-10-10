@@ -614,10 +614,23 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
       </div>
       <p id="candidateStatus" class="muted" role="status" aria-live="polite">尚未生成；重开会恢复本机最近结果，不自动收费调用AI。</p>
       <div id="candidateResults"></div>
+      <hr />
+      <h3>历史候选验证（以前保存的名单）</h3>
+      <p class="muted">按实际保存日期选择名单，不会用今天的数据重新选股，也不会重新调用AI。以保存日期之后下一交易日开盘为起点，观察第5、10或20个交易日收盘的未复权价格；不是实盘收益或荐股成功率。缺失、停牌、观察期未满单独列出。</p>
+      <div class="capital-flow-controls">
+        <label>名单保存日期（留空显示全部）<input id="candidateHistoryDate" type="date" /></label>
+        <button id="candidateHistoryLoad" class="secondary" type="button">查询保存名单</button>
+        <label>已保存名单<select id="candidateHistoryRun"><option value="">请先查询保存名单</option></select></label>
+        <label>观察期<select id="candidateHistoryDays"><option value="5">5个交易日</option><option value="10">10个交易日</option><option value="20">20个交易日</option></select></label>
+        <button id="candidateHistoryEvaluate" class="secondary" type="button">查看原名单及后续表现</button>
+      </div>
+      <p id="candidateHistoryStatus" class="muted" role="status" aria-live="polite">使用上方所选板块来源和范围；没有保存名单的日期不能凭空恢复。</p>
+      <div id="candidateHistoryResults"></div>
     </section>
 
   </main>
   <script src="/static/candidates.js" defer></script>
+  <script src="/static/candidate_history.js" defer></script>
   <script>
     const $ = (id) => document.getElementById(id);
     let currentReport = null;

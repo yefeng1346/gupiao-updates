@@ -297,6 +297,7 @@ class CandidateService:
             options = run["options"]
             report = self.report_builder(options["sector_type"], None, options["provider"])
             run["result"] = generate_candidates(self.database, report, options, self.member_fetcher, progress, lambda: self.cancelled(run["id"]), self.name_fetcher)
+            run["result"]["saved_at"] = shanghai_now().isoformat()
             run.update(status="interpreting" if options["ai_enabled"] and run["result"]["rows"] else "completed", message="候选已生成，正在逐只加载AI解读…")
             self._save(run)  # Results become visible before any model request.
             if options["ai_enabled"]:
