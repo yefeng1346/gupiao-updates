@@ -1,10 +1,10 @@
 {
-  "version": "1.6.3",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-10-candidates-v1.6.3.zip",
+  "version": "1.6.4",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-10-update-install-fix-v1.6.4.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.6.3/gupiao-windows-2026-10-10-candidates-v1.6.3.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.6.4/gupiao-windows-2026-10-10-update-install-fix-v1.6.4.zip"
   ],
-  "sha256": "b5a8a62324aa48c180398fd2f757eb92a6dd730f3f63db93b019625a3bd47468",
+  "sha256": "37ef70f1f5f4a1ad7a3ae96d5a509792149315b3d2071bad4d0227755545224b",
   "published_at": "2026-10-10",
-  "notes": "新增综合候选股票与AI解读：程序按板块排名/RPS、主线、已保存三日板块资金和通达信个股日线筛选，最多10只；右侧逐只加载现有模型的证据解读。支持不调用AI、取消、单只重试、关闭重开恢复及相同事实缓存，多窗口避免重复调用。AI失败不丢候选，日期不符和历史不足明确提示；须先在通达信补齐最新个股日线。候选和得分不是买卖指令或上涨概率；财务、公告与可成交性未核验。保留Key、配置、历史数据库、公式和选股结果。"
+  "notes": "修复下载完成后安装接口因不存在的任务变量导致HTTP 500。资金任务运行时安全提示等待，未准备安装包或文件占用时不退出原版本；新增安装接口回归和打包EXE真实接口冒烟测试。保留1.6.3候选股票与AI解读、资金筛选等功能，以及Key、配置、历史数据、公式和选股结果。受影响旧版本请从GitHub Release下载完整ZIP，关闭同目录所有窗口后覆盖程序；不要删除.env、data和reports。"
 }
