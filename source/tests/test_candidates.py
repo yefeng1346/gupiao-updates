@@ -85,6 +85,41 @@ class CandidateTests(unittest.TestCase):
         with patch("app.formula_screen._discover_day_files",return_value=[]):
             with self.assertRaisesRegex(ValueError,"通达信个股日线"): self.generate()
 
+    def test_relaxed_board_gate_keeps_missing_and_weak_boards_out(self):
+        from app.candidates import select_boards
+        self.report['t_groups']={}
+        row=self.report['latest_top100'][0]
+        row.update(rps50=55,rank=150,rank_change_5d=0)
+        self.assertEqual(len(select_boards(self.db,self.report,5,False)),1)
+        row.update(rank=250,rank_change_5d=5)
+        self.assertEqual(len(select_boards(self.db,self.report,5,False)),1)
+        for fields in ({'rps50':49}, {'rps50':None}, {'rps50':55,'rank_change_5d':4}):
+            row.update(fields)
+            self.assertEqual(select_boards(self.db,self.report,5,False),[])
+
+    def test_relaxed_stock_gate_accepts_shallow_pullback_not_deep_decline(self):
+        bars=[{**b,'close':100,'amount':15000000} for b in self.bars]
+        bars[-1]['close']=98
+        metrics,reason=stock_metrics(bars,'2026-10-09',10000000)
+        self.assertIsNone(reason)
+        self.assertLess(metrics['close'],metrics['ma20'])
+        self.assertLess(metrics['return_20d'],0)
+        self.assertIsNone(stock_metrics(bars,'2026-10-09',20000000)[0])
+        bars[-1]['close']=94
+        self.assertIsNone(stock_metrics(bars,'2026-10-09',10000000)[0])
+        bars[-1]['close']=140
+        self.assertIsNone(stock_metrics(bars,'2026-10-09',10000000)[0])
+
+    def test_relaxed_candidates_have_truthful_reasons_and_risks(self):
+        bars=[{**b,'close':100,'amount':15000000} for b in self.bars]
+        bars[-1]['close']=98
+        with patch('app.formula_screen._read_daily',return_value=bars):
+            result=self.generate(min_amount=10000000)
+        self.assertEqual(len(result['rows']),1)
+        self.assertTrue(any('回调' in risk for risk in result['rows'][0]['risks']))
+        self.assertFalse(any('涨幅为正' in reason for reason in result['rows'][0]['reasons']))
+        self.assertEqual(result['rule_version'],'watchlist-v2-relaxed')
+
     def test_one_board_failure_preserves_other_board(self):
         self.report["latest_top100"].append({"sector_code":"BK0002","sector_name":"失败板块","rank":6,"rps50":89})
         self.members.side_effect=lambda board,*args: (_ for _ in ()).throw(RuntimeError("down")) if board["sector_code"]=="BK0002" else {"source":"模拟","rows":[{"code":"600001","name":"模拟股票"}]}

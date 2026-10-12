@@ -362,15 +362,6 @@
       <div class="hero-stat"><small>行情来源</small><strong id="heroProvider">—</strong></div>
     </section>
 
-    <section class="card">
-      <h2>导入结构化板块快照（可选）</h2>
-      <p class="muted">如果外部程序或 API 能提供原始排名和 RPS50，可粘贴 JSON 数组或导入 JSON/CSV 文件。工具只保存原值，不会从涨跌幅猜排名；普通行情同步仍使用本地计算。</p>
-      <textarea id="snapshotJson" rows="6" style="width:100%;box-sizing:border-box;" placeholder='[{"trade_date":"2026-08-20","sector_type":"concept","sector_code":"880729","sector_name":"CXO概念","rank":1,"rps50":98,"pct_change":5.26,"close":1051.9,"amount":773800000000}]'></textarea>
-      <div style="margin-top:10px;display:flex;flex-wrap:wrap;align-items:end;gap:10px;"><button id="importSnapshotBtn" class="secondary">导入结构化快照</button><label style="min-width:240px;">从文件导入
-        <input id="snapshotFile" type="file" accept=".json,.csv,application/json,text/csv" />
-      </label><span id="snapshotStatus" class="muted"></span></div>
-    </section>
-
     <section class="card notice">
       首次同步建议把“最多板块数”设置为 10 测试流程，确认正常后改为 0 获取全部板块。工具会自动选择覆盖较完整的最新交易日；如果上游接口提前返回下一交易日的少量数据，会在数据状态中提示并忽略该日期。
     </section>
@@ -480,7 +471,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
       <h3>当前资金流向</h3>
       <p class="muted">当前接口独立读取，不依赖历史查询。每次保存完整板块列表，显示数量只影响页面。盘中快照不用于10日统计；软件保持打开时，15:10后自动采集、复核收盘数据。重启先恢复本地结果；后台收盘采集不影响页面打开。</p>
       <div class="capital-flow-controls">
-        <label>显示数量<select id="currentFlowLimit"><option value="20">前20</option><option value="50" selected>前50</option><option value="100">前100</option><option value="1000">全部</option></select></label>
+        <label>显示数量<select id="currentFlowLimit"><option value="10" selected>前10</option><option value="20">前20</option><option value="50">前50</option><option value="100">前100</option><option value="1000">全部</option></select></label>
         <button id="currentFlowRefresh" class="secondary" type="button">刷新当前资金流向</button>
         <span id="currentFlowStatus" class="muted" aria-live="polite"></span>
       </div>
@@ -492,7 +483,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
           <input id="capitalFlowDate" type="date" />
         </label>
         <label>显示数量
-          <select id="capitalFlowLimit"><option value="20">前 20</option><option value="50" selected>前 50</option><option value="100">前 100</option><option value="1000">全部</option></select>
+          <select id="capitalFlowLimit"><option value="10" selected>前 10</option><option value="20">前 20</option><option value="50">前 50</option><option value="100">前 100</option><option value="1000">全部</option></select>
         </label>
         <label>统计天数（交易日）
           <input id="capitalFlowWindowDays" type="number" min="1" max="60" step="1" value="10" aria-label="统计天数（交易日）" />
@@ -601,11 +592,12 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
       <h2>综合候选股票与AI解读</h2>
       <p class="muted">一键先生成规则候选，再逐只加载AI解读。最多10只，使用上方选择的模型和现有Key；AI会产生调用费用，相同事实和模型的成功解读会复用本地缓存。未配置AI或调用失败不影响候选。候选不是买入推荐或上涨概率。</p>
       <p class="muted">需要最近收盘板块报告、对应成分及通达信个股日线；日期不一致、历史不足、名称未知和风险名称剔除。板块资金不代表个股资金，财务/公告及下一日可成交性未核验。只使用已保存资金，不自动补历史。</p>
+      <p class="muted">宽松观察池：板块RPS≥50，排名前200或名次改善≥5位；个股收盘不低于20日均线的97%，20日涨幅≥-5%，5日涨幅≤30%。默认最低日成交额1000万元；放宽条件增加的是观察范围，不代表更高胜率。</p>
       <div class="capital-flow-controls">
         <label>板块报告来源<select id="candidateProvider"><option value="akshare">AkShare（网络报告）</option><option value="efinance">efinance</option><option value="tdx_standard">通达信本地</option><option value="tdx_online">通达信网络</option><option value="tdx">通达信协议/本地</option></select></label>
         <label>板块范围<select id="candidateType"><option value="concept">概念板块</option><option value="industry">行业板块</option></select></label>
         <label>候选数量<input id="candidateLimit" type="number" min="1" max="10" step="1" value="10" /></label>
-        <label>最低日成交额（万元）<input id="candidateAmount" type="number" min="100" max="100000" step="100" value="2000" /></label>
+        <label>最低日成交额（万元）<input id="candidateAmount" type="number" min="100" max="100000" step="100" value="1000" /></label>
         <label><input id="candidateRequireFlow" type="checkbox" />必须有完整3日正净流入（板块参考）</label>
         <label><input id="candidateUseFormula" type="checkbox" />叠加已选技术公式（不支持财务公式）</label>
         <label><input id="candidateUseAI" type="checkbox" checked />自动AI解读（最多10只）</label>
@@ -1858,7 +1850,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
         ? "正在更新当天完整榜单并保存；随后读取本地逐日档案，不等待历史接口…"
         : "正在读取所选日期的本地结果…";
       try {
-        const limit = Math.max(1, Number($("capitalFlowLimit").value) || 50);
+        const limit = Math.max(1, Number($("capitalFlowLimit").value) || 10);
         const ruleQuery = flowRuleQuery();
         const selectedDate = $("capitalFlowDate").value;
         const source = selectedFlowSource();
@@ -1899,7 +1891,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
         $("capitalFlowStatus").textContent = error.message;
         return;
       }
-      const limit = Math.max(1, Number($("capitalFlowLimit").value) || 50);
+      const limit = Math.max(1, Number($("capitalFlowLimit").value) || 10);
       const today = localDateInputValue();
       const savedDate = localStorage.getItem(flowDateStorageKey());
       const preferredDate = savedDate && savedDate <= today ? savedDate : "";
@@ -2748,47 +2740,6 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
         if ($("boardSearchInput").value.trim()) await searchBoards();
       } catch (error) { $("searchStatus").innerHTML = `<span class="error">${esc(error.message)}</span>`; }
       finally { button.disabled = false; button.textContent = "更新板块目录"; }
-    };
-    $("importSnapshotBtn").onclick = async () => {
-      const button = $("importSnapshotBtn");
-      const status = $("snapshotStatus");
-      button.disabled = true; status.textContent = "导入中…";
-      try {
-        const rows = JSON.parse($("snapshotJson").value);
-        const result = await api("/api/import-snapshot", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({rows})});
-        status.textContent = `${result.message} 共 ${result.saved_rows} 行，日期 ${result.date_range[0]} 至 ${result.date_range[1]}。`;
-        await loadReport(true, true);
-      } catch (error) { status.innerHTML = `<span class="error">${esc(error.message)}</span>`; }
-      finally { button.disabled = false; }
-    };
-    function parseSnapshotCsv(text) {
-      const lines = text.trim().split(/\r?\n/).filter(Boolean);
-      if (lines.length < 2) return [];
-      const split = line => line.split(/,(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)/).map(value => value.trim().replace(/^\"|\"$/g, ""));
-      const headers = split(lines[0]);
-      return lines.slice(1).map(line => {
-        const values = split(line);
-        const row = Object.fromEntries(headers.map((key, index) => [key, values[index] ?? ""]));
-        for (const key of ["rank", "rps50", "pct_change", "close", "amount", "volume"]) {
-          if (row[key] !== "") row[key] = Number(row[key]);
-        }
-        return row;
-      });
-    }
-    $("snapshotFile").onchange = async () => {
-      const file = $("snapshotFile").files[0];
-      if (!file) return;
-      const status = $("snapshotStatus");
-      status.textContent = "正在读取文件…";
-      try {
-        const text = await file.text();
-        const parsed = file.name.toLowerCase().endsWith(".csv") ? parseSnapshotCsv(text) : JSON.parse(text);
-        const rows = parsed.rows || parsed;
-        if (!Array.isArray(rows) || !rows.length) throw new Error("快照没有有效数据");
-        const result = await api("/api/import-snapshot", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({rows})});
-        status.textContent = result.message + " 共 " + result.saved_rows + " 行，日期 " + result.date_range[0] + " 至 " + result.date_range[1] + "。";
-        await loadReport(true, true);
-      } catch (error) { status.innerHTML = '<span class="error">' + esc(error.message) + '</span>'; }
     };
     $("clearBtn").onclick = () => {
       $("clearConfirm").hidden = false;

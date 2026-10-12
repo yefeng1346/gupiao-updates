@@ -192,7 +192,7 @@ class CandidateRequest(BaseModel):
     sector_type: Literal["concept", "industry"] = "concept"
     max_results: int = Field(default=10, ge=1, le=10)
     board_limit: int = Field(default=5, ge=1, le=5)
-    min_amount: float = Field(default=20000000, ge=1000000, le=1000000000, allow_inf_nan=False)
+    min_amount: float = Field(default=10000000, ge=1000000, le=1000000000, allow_inf_nan=False)
     require_flow: bool = False
     ai_enabled: bool = True
     model: str | None = Field(default=None, max_length=200)

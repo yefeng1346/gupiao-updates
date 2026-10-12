@@ -16,7 +16,7 @@ from .flow_summary import attach_three_day_flow
 from .formula_engine import uses_finance
 from .sector_leaders import _fetch_constituents, _local_tdx_block_paths
 
-RULE_VERSION = "watchlist-v1"
+RULE_VERSION = "watchlist-v2-relaxed"
 PROMPT_VERSION = "candidate-explanation-v1"
 DISCLAIMER = "仅为规则候选观察池，得分不是上涨概率，不构成买卖指令；未验证财务、公告及下一交易日可成交性。历史表现不保证未来收益。"
 
@@ -53,7 +53,7 @@ def select_boards(database, report, limit, require_flow):
         rps = _number(row.get("rps50"))
         rank = _number(row.get("rank"))
         improvement = max((_number(row.get(k)) or 0) for k in ("rank_change_1d", "rank_change_5d", "rank_change_10d"))
-        if rps is None or rps < 60 or rank is None or (rank > 100 and improvement < 15):
+        if rps is None or rps < 50 or rank is None or (rank > 200 and improvement < 5):
             continue
         flow = row.get("three_day_main_net_inflow") if row.get("three_day_flow_status") == "complete" else None
         if require_flow and (flow is None or flow <= 0):
@@ -110,7 +110,7 @@ def stock_metrics(bars, report_date, min_amount):
     ret20, ret5 = (close/values[-21]-1)*100, (close/values[-6]-1)*100
     if not all(math.isfinite(v) for v in (ma20, ma60, ret20, ret5)):
         return None, "行情或流动性条件不通过"
-    if close <= ma20 or ret20 <= 0 or ret5 > 30:
+    if close < ma20 * .97 or ret20 < -5 or ret5 > 30:
         return None, "技术条件不通过或短期涨幅过大"
     volumes = [_number(b.get("volume")) for b in dated[-21:-1]]
     ratio = volume/(sum(volumes)/20) if all(v is not None and v > 0 for v in volumes) else None
@@ -195,9 +195,11 @@ def generate_candidates(database, report, options, fetch_members=strict_members,
         elif best.get("three_day_main_net_inflow", 0) <= 0: risks.append("板块三日主力净流入非正，不属于资金支持信号")
         if best["flow_reference"]: risks.append("资金来自东方财富唯一同名板块，仅作参考，成分可能不同")
         if metrics["volume_ratio"] is None: risks.append("量比缺失，未提供量比加分")
+        if metrics["close"] <= metrics["ma20"] or metrics["return_20d"] <= 0:
+            risks.append("按宽松条件入选：仍可能处于均线附近或中期回调，不能视为已确认强势")
         rows.append({"code": code, "name": name, "data_date": report["report_date"], "score": best["board_score"] + metrics["stock_score"], "board_score": best["board_score"], **metrics,
                      "boards": [{"code": b["sector_code"], "name": b["sector_name"], "source": b["member_source"]} for b in member["boards"]],
-                     "evidence": evidence, "reasons": ["所属板块通过RPS和排名/改善条件", "个股收盘高于均线且中期涨幅为正", "成交额通过设置的流动性门槛"] + (["通过所选技术公式"] if options.get("formula") else []),
+                     "evidence": evidence, "reasons": ["所属板块RPS至少50，排名前200或名次改善至少5位", "个股收盘不低于20日均线的97%，20日涨幅不低于负5%，5日涨幅不超过30%", "成交额通过设置的流动性门槛"] + (["通过所选技术公式"] if options.get("formula") else []),
                      "risks": risks, "ai": {"status": "pending" if options["ai_enabled"] else "disabled"}})
     rows.sort(key=lambda r: (-r["score"], -r["amount"], r["code"]))
     if skipped.get("个股日期与报告不一致"):
@@ -205,7 +207,7 @@ def generate_candidates(database, report, options, fetch_members=strict_members,
     rows = rows[:options["max_results"]]
     for index, row in enumerate(rows): row["rank"] = index + 1
     return {"rule_version": RULE_VERSION, "report_date": report["report_date"], "provider": report["dataset_id"], "sector_type": report["sector_type"], "rows": rows, "boards": [{"code": b["sector_code"], "name": b["sector_name"], "score": b["board_score"]} for b in boards],
-            "skipped": skipped, "warnings": warnings, "disclaimer": DISCLAIMER, "rules": "板块最高55分；相关排名改善只取最大值。个股最高45分。分数仅用于规则排序，无胜率含义。未通过条件或缺失不作通过。"}
+            "skipped": skipped, "warnings": warnings, "disclaimer": DISCLAIMER, "rules": "宽松观察池：板块RPS至少50，排名前200或名次改善至少5位；个股收盘不低于20日均线97%，20日涨幅不低于负5%，5日涨幅不超过30%。仍需61条有效日线且日期一致。板块最高55分；相关排名改善只取最大值。个股最高45分。分数仅用于规则排序，无胜率含义。未通过条件或缺失不作通过。"}
 
 
 def explanation_key(row, model):
@@ -273,7 +275,7 @@ class CandidateService:
             errors = fs.validate_formula(options["formula"])
             if errors: raise ValueError("公式无法执行：" + "；".join(errors))
             if uses_finance(options["formula"]): raise ValueError("候选池的可选公式只支持技术条件；含FINANCE的公式请使用原有公式选股功能，不能把未知财务判为通过")
-        request_key = fingerprint(options)
+        request_key = fingerprint({"rule_version": RULE_VERSION, "options": options})
         with self.lock:
             with self.database.connection() as conn:
                 # Serialize across desktop windows/processes sharing this DB.
