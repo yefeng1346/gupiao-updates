@@ -33,7 +33,9 @@ def list_history(database, provider, sector_type, saved_date=None):
     items=[]
     for record in records:
         run=json.loads(record['state_json']); result=run.get('result')
-        if not isinstance(result,dict): continue
+        # Empty generation results are diagnostic jobs, not historical watchlists.
+        # Keep their task state for status restoration, but never offer them here.
+        if not isinstance(result,dict) or not result.get('rows'): continue
         stamp,basis=saved_time(record,result)
         if saved_date and stamp.date().isoformat()!=saved_date: continue
         items.append({'id':record['id'],'saved_at':stamp.isoformat(),'saved_date':stamp.date().isoformat(),

@@ -80,6 +80,24 @@ class HistoryTests(unittest.TestCase):
         self.assertIn('旧记录',data['time_basis'])
         self.result['rows']=[];self.save('empty')
         self.assertEqual(evaluate_history(self.db,'empty')['summary']['total'],0)
+        self.assertNotIn('empty',[run['id'] for run in list_history(self.db,'akshare','concept')])
+
+    def test_empty_history_excluded_without_deleting_diagnostics_or_real_lists(self):
+        original=json.dumps(self.result,ensure_ascii=False)
+        self.result['rows']=[];self.save('old-empty')
+        self.save('new-empty')
+        self.result=json.loads(original);self.save('real-second')
+        with self.db.connection() as conn:
+            before=[tuple(row) for row in conn.execute('SELECT id,state_json FROM candidate_runs ORDER BY id')]
+        self.assertEqual({run['id'] for run in list_history(self.db,'akshare','concept')},{'run','real-second'})
+        self.assertEqual({run['id'] for run in list_history(self.db,'akshare','concept','2026-09-30')},{'run','real-second'})
+        with self.db.connection() as conn:
+            self.assertEqual(before,[tuple(row) for row in conn.execute('SELECT id,state_json FROM candidate_runs ORDER BY id')])
+        with patch('app.db.Database',return_value=self.db),patch('app.config.ensure_directories'):
+            main=importlib.import_module('main')
+        with patch.object(main,'database',self.db):
+            response=LocalAsgiClient(main.app).get('/api/candidates/history',params={'provider':'akshare','saved_date':'2026-09-30'})
+            self.assertEqual({run['id'] for run in response.json()['runs']},{'run','real-second'})
 
     def test_unknown_calendar_invalid_prices_and_period(self):
         self.bars['600001'][0]['open']=float('nan')

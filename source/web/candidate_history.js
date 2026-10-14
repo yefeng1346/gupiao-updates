@@ -14,7 +14,7 @@
       if(token!==serial)return;
       $('candidateHistoryRun').innerHTML='<option value="">请选择一次保存记录</option>'+data.runs.map(run=>`<option value="${esc(run.id)}">${esc(run.saved_at.replace('T',' '))} · 报告${esc(run.report_date)} · ${run.count}只</option>`).join('');
       $('candidateHistoryResults').innerHTML='';
-      $('candidateHistoryStatus').textContent=data.runs.length?`找到${data.runs.length}次保存记录；同日多次分别保留，请选择一条验证。`:'该来源、范围和保存日期没有候选记录；不会重新选股或调用AI。';
+      $('candidateHistoryStatus').textContent=data.runs.length?`找到${data.runs.length}次非空名单记录；同日多次分别保留，请选择一条验证。`:'该来源、范围和保存日期没有非空候选记录（0只记录不列入历史名单）；不会重新选股或调用AI。';
     } catch(error) {if(token===serial)$('candidateHistoryStatus').textContent=`记录查询失败：${error.message}；原显示结果保留`;} 
     finally {if(token===serial)busy(false);}
   }
