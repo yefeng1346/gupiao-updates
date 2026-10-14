@@ -1,10 +1,10 @@
 {
-  "version": "1.6.6",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-12-relaxed-compact-v1.6.6.zip",
+  "version": "1.6.7",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-14-nonempty-history-v1.6.7.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.6.6/gupiao-windows-2026-10-12-relaxed-compact-v1.6.6.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.6.7/gupiao-windows-2026-10-14-nonempty-history-v1.6.7.zip"
   ],
-  "sha256": "e7ec668f08e344b90ce716ba742b119501a2c45a66ab62e6a9a76a510c10bab4",
-  "published_at": "2026-10-12",
-  "notes": "候选筛选适度放宽：板块RPS至少50、排名前200或改善至少5位，允许个股均线附近轻微回调；默认成交额1000万元，保留风险和有效日线过滤。删除结构化快照导入界面，已有数据保留。当前及历史资金榜默认前10，完整数据采集不变。保留历史候选验证和AI解读。推荐下载完整ZIP，关闭软件后覆盖两个EXE和完整_internal；保留.env、data和reports。"
+  "sha256": "eb81d7b17b6650b0a861bd026405385f86bad05db3e8cfe86f47d29d9d7c3bb2",
+  "published_at": "2026-10-14",
+  "notes": "历史候选名单自动排除0只股票记录，已有空记录也不再显示；非空名单及AI解读不受影响。底层诊断任务保留，方便查看筛选失败原因。保留1.6.6宽松候选条件和资金榜前10默认显示。推荐从GitHub下载完整ZIP，关闭软件后覆盖两个EXE及完整_internal；保留.env、data和reports。"
 }
