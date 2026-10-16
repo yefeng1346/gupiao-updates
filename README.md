@@ -2,7 +2,7 @@
 
 用户可直接从[GitHub发布页](https://github.com/yefeng1346/gupiao-updates/releases/latest)的Assets下载完整ZIP，关闭软件后覆盖原目录的两个EXE及完整`_internal`目录；不要删除`.env`、`data`、`reports`。不要选择“Source code”。原有在线更新入口仍保留，latest.json兼容旧版本；受安装HTTP 500影响的旧版本应手动升级一次。
 
-最新版本：[1.6.7说明及手动升级步骤](v1.6.7-release-notes.md)。历史候选名单自动排除新旧0只股票记录，非空名单和AI解读不变，诊断任务保留。保留宽松候选筛选、1000万元默认成交额、两处资金榜前10、历史候选验证和更新安装HTTP 500修复等功能；升级保留本机Key、配置、历史数据库、公式和选股结果，公开包不含私有凭据和用户数据。
+最新版本：[1.6.8说明及手动升级步骤](v1.6.8-release-notes.md)。今日盘中资金预览改为定高上下滚动区，表头固定。保留收盘历史榜、历史候选验证、宽松候选筛选、资金榜默认前10及空名单过滤等功能；升级保留本机Key、配置、历史数据库、公式和选股结果，公开包不含私有凭据和用户数据。
 
 source目录保存本次公开程序源码。维护者可在该目录安装requirements.txt依赖并运行main.py对应FastAPI服务，桌面入口为desktop_app.py。
 

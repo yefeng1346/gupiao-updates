@@ -1,10 +1,10 @@
 {
-  "version": "1.6.7",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-14-nonempty-history-v1.6.7.zip",
+  "version": "1.6.8",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-16-flow-preview-scroll-v1.6.8.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.6.7/gupiao-windows-2026-10-14-nonempty-history-v1.6.7.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.6.8/gupiao-windows-2026-10-16-flow-preview-scroll-v1.6.8.zip"
   ],
-  "sha256": "eb81d7b17b6650b0a861bd026405385f86bad05db3e8cfe86f47d29d9d7c3bb2",
-  "published_at": "2026-10-14",
-  "notes": "历史候选名单自动排除0只股票记录，已有空记录也不再显示；非空名单及AI解读不受影响。底层诊断任务保留，方便查看筛选失败原因。保留1.6.6宽松候选条件和资金榜前10默认显示。推荐从GitHub下载完整ZIP，关闭软件后覆盖两个EXE及完整_internal；保留.env、data和reports。"
+  "sha256": "44c766b5139998dde1d20108c701c7e24ec100a8e5c949b6ae9589cbcef1454a",
+  "published_at": "2026-10-16",
+  "notes": "东方财富查询结果中的今日盘中预览改为420像素高的上下滚动区，表头固定，避免数百个板块拉长页面。收盘历史榜、查询控件和数据逻辑不变。保留历史候选验证、1.6.6候选筛选调整及资金榜默认前10。推荐从GitHub下载完整ZIP，关闭软件后覆盖两个EXE及完整_internal；保留.env、data和reports。"
 }
