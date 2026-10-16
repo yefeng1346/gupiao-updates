@@ -240,6 +240,8 @@
     .capital-flow-panels { grid-template-columns:1fr; }
     .capital-flow-panel td:nth-child(2) small { display:block; font-size:11px; }
     .capital-flow-table { overflow:auto; border:1px solid #edf0f6; border-radius:10px; }
+    .capital-flow-table-scroll { max-height:420px; overflow-y:auto; overscroll-behavior:contain; }
+    .capital-flow-table-scroll thead th { position:sticky; top:0; z-index:1; }
     .capital-flow-table table { min-width:1050px; }
     .capital-flow-table th,.capital-flow-table td { white-space:nowrap; }
     .capital-flow-table th:first-child,.capital-flow-table td:first-child { text-align:center; }
@@ -1653,7 +1655,7 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
       const warnings = Array.isArray(data.warnings) ? data.warnings : [];
       const warningHtml = warnings.length ? `<p class="notice" role="status">${warnings.map(esc).join("<br>")}</p>` : "";
       const preview = data.preview;
-      const previewHtml = preview ? `<div class="capital-flow-rank-card"><h4>${esc(preview.date)} 今日盘中预览（非收盘）</h4><p>${esc(preview.note)} 更新时间 ${esc(preview.updated_at || "未知")}；共 ${esc(preview.total)} 个板块。</p><div class="capital-flow-table"><table><thead><tr><th>板块</th><th>主力净流入</th><th>涨跌幅</th></tr></thead><tbody>${(preview.rows || []).map(row => `<tr><td>${esc(row.sector_name)} ${esc(row.sector_code)}</td><td>${flowAmount(row.main_net_inflow)}</td><td>${quoteChange(row.pct_change, "%")}</td></tr>`).join("")}</tbody></table></div></div>` : "";
+      const previewHtml = preview ? `<div class="capital-flow-rank-card"><h4>${esc(preview.date)} 今日盘中预览（非收盘）</h4><p>${esc(preview.note)} 更新时间 ${esc(preview.updated_at || "未知")}；共 ${esc(preview.total)} 个板块。</p><div class="capital-flow-table capital-flow-table-scroll"><table><thead><tr><th>板块</th><th>主力净流入</th><th>涨跌幅</th></tr></thead><tbody>${(preview.rows || []).map(row => `<tr><td>${esc(row.sector_name)} ${esc(row.sector_code)}</td><td>${flowAmount(row.main_net_inflow)}</td><td>${quoteChange(row.pct_change, "%")}</td></tr>`).join("")}</tbody></table></div></div>` : "";
       return `<section class="capital-flow-panel">
         <h3>${esc(typeLabel(data.sector_type))}｜收盘历史实际交易日 ${esc(data.report_date || "暂无")}｜${esc(data.source || "东方财富")}</h3>
         <p class="capital-flow-panel-meta">所选日期 ${esc(data.requested_date || "—")}；查询交易日 ${esc(data.resolved_date || data.requested_date || "—")}；单日覆盖 ${esc(coverage.daily_boards ?? rows.length)}/${esc(coverage.requested_boards ?? rows.length)} 个板块${data.daily_complete ? "（单日数据完整）" : "（仅展示实际取得的数据）"}。${esc(windowDays)}日历史区间 ${esc(firstDate)} 至 ${esc(lastDate)}；${esc(windowDays)}日完整覆盖 ${esc(coverage.complete_boards ?? 0)}/${esc(coverage.requested_boards ?? 0)} 个板块${incomplete ? `（${windowDays}日数据未完整）` : ""}；本次历史读取失败 ${esc(coverage.failed_boards ?? 0)} 个。</p>
