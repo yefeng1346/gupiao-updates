@@ -1791,12 +1791,12 @@ X_7:=(COUNT(X_4,8))&gt;0 AND COUNT(CROSS(五日资金,资金)&gt;0,4) AND X_6;
             $("capitalFlowStatus").textContent = job.status === "paused"
               ? "正在恢复之前的更新任务，已取得的数据仍保留…"
               : job.stage === "cooldown"
-              ? `${typeLabel(type)}网络暂不可用，约 ${seconds} 秒后自动续补；已执行 ${job.round || 0}/${job.max_rounds || 3} 轮。可取消，无需再次点击。`
+              ? `${typeLabel(type)}网络暂不可用，约 ${seconds} 秒后自动续补；已执行 ${job.round || 0}/${job.max_rounds || 3} 轮，任务累计尝试 ${job.attempted_total || 0} 次（成功 ${job.downloaded_total || 0}，失败 ${job.failed_total || 0}）。可取消，无需再次点击。`
               : job.stage === "current"
               ? `正在联网更新${typeLabel(type)}当前资金数据，请稍候…`
               : job.stage === "sync"
               ? `${typeLabel(type)}当天榜已保存，正在同步已配置历史库并计算本地筛选榜…`
-              : `正在自动更新${typeLabel(type)}（第${job.round || 1}/${job.max_rounds || 3}轮），收盘截至 ${job.cutoff || "正在确认"}：本轮尝试 ${job.attempted}/${job.total || "?"}，成功 ${job.downloaded}，失败 ${job.failed}；通道 ${channel}。${job.current_updated ? `当前 ${job.current_total} 个板块已更新；` : ""}成功记录已保存，无需再次点击。`;
+              : `正在自动更新${typeLabel(type)}（第${job.round || 1}/${job.max_rounds || 3}轮），收盘截至 ${job.cutoff || "正在确认"}：本轮 ${job.attempted || 0}/${job.total || "?"}（成功 ${job.downloaded || 0}，失败 ${job.failed || 0}）；任务累计尝试 ${job.attempted_total || 0} 次（成功 ${job.downloaded_total || 0}，失败 ${job.failed_total || 0}）；通道 ${channel}。${job.current_updated ? `当前 ${job.current_total} 个板块已更新；` : ""}成功记录已保存，无需再次点击。`;
           }
           if (!job.result) throw new Error(job.message || "未取得可显示的历史数据");
           // Recovered old jobs retain their original rule. Recompute locally if

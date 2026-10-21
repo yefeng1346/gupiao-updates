@@ -91,7 +91,9 @@ class FlowHistoryJobs:
                 raise ValueError("已有两个资金更新任务，请完成或取消后再启动")
             initial = {"id":uuid.uuid4().hex,"status":"running","sector_type":sector_type,"date":selected_date,
                        "mode":mode,"window_days":window_days,"min_inflow_days":min_inflow_days,
-                       "attempted":0,"downloaded":0,"failed":0,"total":0,"round":0,"max_rounds":MAX_ROUNDS,
+                       "attempted":0,"downloaded":0,"failed":0,"total":0,
+                       "attempted_total":0,"downloaded_total":0,"failed_total":0,
+                       "round":0,"max_rounds":MAX_ROUNDS,
                        "created_at":time.time(),"expires_at":time.time()+JOB_SECONDS,"next_retry_at":0}
             state,claimed = database.claim_flow_job(initial,self.owner,restart_expired=not recovering)
             # A second process can own this date; never silently show its rule.
@@ -99,6 +101,8 @@ class FlowHistoryJobs:
                 raise ValueError("该日期正在按另一组筛选条件更新，请完成或取消后调整条件")
             if not claimed:
                 return state
+            for key in ("attempted_total","downloaded_total","failed_total"):
+                state.setdefault(key,0)
             job_id,cancel = state["id"],Event()
             if state.get("cancel_requested"):
                 cancel.set()
@@ -160,6 +164,7 @@ class FlowHistoryJobs:
                     pass
                 report = None
                 last_error = ""
+                totals = {key:max(0,int(state.get(key,0))) for key in ("attempted_total","downloaded_total","failed_total")}
                 for round_number in range(state["round"]+1,MAX_ROUNDS+1):
                     if token.is_set() or time.time() >= state["expires_at"]:
                         break
@@ -168,9 +173,13 @@ class FlowHistoryJobs:
                         update({"stage":"cooldown","next_retry_at":retry_at,"message":"网络通道冷却中，稍后自动续补"})
                         if retry_at >= state["expires_at"] or not wait_until(retry_at):
                             break
-                    update({"stage":"history","round":round_number,"next_retry_at":0})
+                    update({"stage":"history","round":round_number,"attempted":0,"downloaded":0,"failed":0,"next_retry_at":0})
+                    round_start_totals = totals.copy()
                     def progress(values):
-                        update({**values,"round":round_number,"history_transports":HISTORY_POOL.snapshot()})
+                        counts = {key:max(0,int(values.get(key,0))) for key in ("attempted","downloaded","failed")}
+                        totals.update({f"{key}_total":round_start_totals[f"{key}_total"]+counts[key]
+                                       for key in counts})
+                        update({**values,**totals,"round":round_number,"history_transports":HISTORY_POOL.snapshot()})
                     retry = False
                     retry_after = 0
                     try:
