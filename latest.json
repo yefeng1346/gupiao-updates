@@ -1,10 +1,10 @@
 {
-  "version": "1.6.9",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-22-flow-progress-v1.6.9.zip",
+  "version": "1.7.0",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-29-ui-redesign-v1.7.0.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.6.9/gupiao-windows-2026-10-22-flow-progress-v1.6.9.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.7.0/gupiao-windows-2026-10-29-ui-redesign-v1.7.0.zip"
   ],
-  "sha256": "0b90c926d41ae55a96b999fc52a3cf2d40103b4adc8f8ec0265321e286c66545",
-  "published_at": "2026-10-22",
-  "notes": "资金历史自动补缺进度现在同时显示本轮进度和任务累计尝试、成功、失败数量；成功获取的数据仍逐个保存，后续轮次仅继续补缺并重试失败项，软件重开恢复任务时保留累计计数。推荐从GitHub Release下载完整ZIP，关闭软件后覆盖两个EXE及完整_internal；保留.env、data和reports。"
+  "sha256": "bd903246baaa9f93e8b5db6509105529b9f26e38197c95fe180d876630c68af0",
+  "published_at": "2026-10-29",
+  "notes": "新版左侧导航与今日概览；新增跟随系统/浅色/深色主题、下跌日平静复盘和本机复盘日记。日记仅保存在本机数据库，清理行情不删除日记。完整升级 ZIP 不包含用户 .env、数据库或报告；更新时保留原目录的 .env、data、reports。"
 }
