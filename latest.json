@@ -1,10 +1,10 @@
 {
-  "version": "1.7.0",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-10-29-ui-redesign-v1.7.0.zip",
+  "version": "1.7.1",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-03-flow-reliability-v1.7.1.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.7.0/gupiao-windows-2026-10-29-ui-redesign-v1.7.0.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.7.1/gupiao-windows-2026-11-03-flow-reliability-v1.7.1.zip"
   ],
-  "sha256": "bd903246baaa9f93e8b5db6509105529b9f26e38197c95fe180d876630c68af0",
-  "published_at": "2026-10-29",
-  "notes": "新版左侧导航与今日概览；新增跟随系统/浅色/深色主题、下跌日平静复盘和本机复盘日记。日记仅保存在本机数据库，清理行情不删除日记。完整升级 ZIP 不包含用户 .env、数据库或报告；更新时保留原目录的 .env、data、reports。"
+  "sha256": "295b384d8c9d008c248e95421275c6ae03b241808e8588c0c5fc690d3ebac4e4",
+  "published_at": "2026-11-03",
+  "notes": "改善历史资金补缺：自动网络模式下，代理返回HTTP 200但数据无效时继续尝试直连；遵守Retry-After限流等待，不改Clash设置。多日流入榜使用独立紧凑列宽和行距，保留全部资金净额列。不能保证上游接口每次成功，已有记录继续保留。更新保留.env、data、reports及复盘日记。"
 }
