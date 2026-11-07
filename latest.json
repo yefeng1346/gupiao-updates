@@ -1,10 +1,10 @@
 {
-  "version": "1.7.2",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-07-etf-difficulty-v1.7.2.zip",
+  "version": "1.7.3",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-08-startup-fix-v1.7.3.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.7.2/gupiao-windows-2026-11-07-etf-difficulty-v1.7.2.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.7.3/gupiao-windows-2026-11-08-startup-fix-v1.7.3.zip"
   ],
-  "sha256": "9a47ad35c45f704a785186f175ce229c51f3303a4d13fa57b57758ee49692bf3",
-  "published_at": "2026-11-07",
-  "notes": "新增免费沪深ETF日/5个交易日估算净申购榜，不提供周榜；点击更新后后台取数、缓存续补，覆盖不足明确标注，首次全市场补齐可能需要多轮。份额变化乘净值为估算，不是二级市场主力资金。综合候选新增宽松/标准/严格，默认宽松，切换不调用AI。升级保留.env、data、reports及复盘日记。免费来源可能限流，不保证每次更新完整。"
+  "sha256": "ffd0871d5b04c69425633f2a6dea87df23c8c0badbb5994561b22b6377ee722b",
+  "published_at": "2026-11-08",
+  "notes": "修复Windows覆盖升级后启动报错“Can't determine version for pytz”：完整打包时区依赖、使用符合要求的隔离构建环境；新更新器整体替换运行库并保留旧库备份，避免残留冲突。保留免费沪深ETF日/5日榜和选股难度。升级保留.env、data、reports及复盘日记。打不开旧版的用户请到GitHub手动下载完整ZIP升级。"
 }
