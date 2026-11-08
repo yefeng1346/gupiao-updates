@@ -1,10 +1,10 @@
 {
-  "version": "1.7.3",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-08-startup-fix-v1.7.3.zip",
+  "version": "1.7.4",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-08-etf-screen-v1.7.4.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.7.3/gupiao-windows-2026-11-08-startup-fix-v1.7.3.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.7.4/gupiao-windows-2026-11-08-etf-screen-v1.7.4.zip"
   ],
-  "sha256": "ffd0871d5b04c69425633f2a6dea87df23c8c0badbb5994561b22b6377ee722b",
+  "sha256": "95aa9fa89232d9c706cd0d7d044292a70f72681fe9167a4319dab495386b0c77",
   "published_at": "2026-11-08",
-  "notes": "修复Windows覆盖升级后启动报错“Can't determine version for pytz”：完整打包时区依赖、使用符合要求的隔离构建环境；新更新器整体替换运行库并保留旧库备份，避免残留冲突。保留免费沪深ETF日/5日榜和选股难度。升级保留.env、data、reports及复盘日记。打不开旧版的用户请到GitHub手动下载完整ZIP升级。"
+  "notes": "ETF新增“__个交易日内至少__天资金流入”筛选，默认10/6，支持1～60个交易日；更新按所选区间补缺，条件调整只重算本地数据。按每日估算净申购额>0计数，区间缺失不补零、不用更早日期凑数。保留ETF日/5日榜、板块资金榜及Windows启动兼容修复，升级保留配置、历史数据和复盘日记。免费来源可能限流，首次补齐可能需要多轮。"
 }
