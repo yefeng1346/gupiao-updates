@@ -1,10 +1,10 @@
 {
-  "version": "1.7.4",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-08-etf-screen-v1.7.4.zip",
+  "version": "1.7.5",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-09-etf-sources-v1.7.5.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.7.4/gupiao-windows-2026-11-08-etf-screen-v1.7.4.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.7.5/gupiao-windows-2026-11-09-etf-sources-v1.7.5.zip"
   ],
-  "sha256": "95aa9fa89232d9c706cd0d7d044292a70f72681fe9167a4319dab495386b0c77",
-  "published_at": "2026-11-08",
-  "notes": "ETF新增“__个交易日内至少__天资金流入”筛选，默认10/6，支持1～60个交易日；更新按所选区间补缺，条件调整只重算本地数据。按每日估算净申购额>0计数，区间缺失不补零、不用更早日期凑数。保留ETF日/5日榜、板块资金榜及Windows启动兼容修复，升级保留配置、历史数据和复盘日记。免费来源可能限流，首次补齐可能需要多轮。"
+  "sha256": "764a7b67ce1c9053b3ee8a3a2fdde2f10773efff586fe75795319386bc5f7143",
+  "published_at": "2026-11-09",
+  "notes": "修复ETF名单日期与份额发布日期不同导致补缺中断：按实际发布日对齐并保留旧记录；新增免费净值来源自动/东方财富/新浪切换，来源分别缓存，份额仍取交易所。成交额通道失败不再中断净值补缺。历史候选增加删除所选名单及二次确认，不影响其他名单、行情与复盘日记。升级保留配置、数据库及历史档案。免费来源仍可能延迟或限流，不保证全市场每次补齐。"
 }
