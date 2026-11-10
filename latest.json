@@ -1,10 +1,10 @@
 {
-  "version": "1.7.5",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-09-etf-sources-v1.7.5.zip",
+  "version": "1.7.6",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-10-flow-mapping-v1.7.6.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.7.5/gupiao-windows-2026-11-09-etf-sources-v1.7.5.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.7.6/gupiao-windows-2026-11-10-flow-mapping-v1.7.6.zip"
   ],
-  "sha256": "764a7b67ce1c9053b3ee8a3a2fdde2f10773efff586fe75795319386bc5f7143",
-  "published_at": "2026-11-09",
-  "notes": "修复ETF名单日期与份额发布日期不同导致补缺中断：按实际发布日对齐并保留旧记录；新增免费净值来源自动/东方财富/新浪切换，来源分别缓存，份额仍取交易所。成交额通道失败不再中断净值补缺。历史候选增加删除所选名单及二次确认，不影响其他名单、行情与复盘日记。升级保留配置、数据库及历史档案。免费来源仍可能延迟或限流，不保证全市场每次补齐。"
+  "sha256": "61c32954bd6fb9f06968635a835fde75afe82d10674a6bf391809d50ea0e6ce1",
+  "published_at": "2026-11-10",
+  "notes": "三日资金列新增具体未匹配原因及处理建议，区分目录为空、同名歧义、没有已核实对应及对应失效；已对应但缺资金记录时列出缺少日期。新增本机人工核对参考对应，明确确认后保存、按来源分别复用，可取消指定对应；不做模糊自动配对，不预置未经核实映射。跨来源值标注东财参考，保存仅刷新原日期资金列，保留排名和高亮。保留ETF来源切换及历史名单删除。升级保留配置、数据和复盘日记。"
 }
