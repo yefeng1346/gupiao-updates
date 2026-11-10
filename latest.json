@@ -1,10 +1,10 @@
 {
-  "version": "1.7.6",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-10-flow-mapping-v1.7.6.zip",
+  "version": "1.7.7",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-10-compact-flow-mapping-v1.7.7.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.7.6/gupiao-windows-2026-11-10-flow-mapping-v1.7.6.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.7.7/gupiao-windows-2026-11-10-compact-flow-mapping-v1.7.7.zip"
   ],
-  "sha256": "61c32954bd6fb9f06968635a835fde75afe82d10674a6bf391809d50ea0e6ce1",
+  "sha256": "4d8b147be6da873ae70e6fef65b066f48deb95a5bdb52ca689095761e09f6c40",
   "published_at": "2026-11-10",
-  "notes": "三日资金列新增具体未匹配原因及处理建议，区分目录为空、同名歧义、没有已核实对应及对应失效；已对应但缺资金记录时列出缺少日期。新增本机人工核对参考对应，明确确认后保存、按来源分别复用，可取消指定对应；不做模糊自动配对，不预置未经核实映射。跨来源值标注东财参考，保存仅刷新原日期资金列，保留排名和高亮。保留ETF来源切换及历史名单删除。升级保留配置、数据和复盘日记。"
+  "notes": "简化三日资金列：原有代码或唯一同名自动匹配成功且数据完整时，只显示资金数值，隐藏参考标签、原因展开和核对按钮；手工对应显示“手工匹配”，保留查看/调整和核对记录。对应失效标为手工匹配已停用，未匹配或数据不足继续提供具体原因。普通/双栏一致，不改变匹配规则、排名或资金计算。升级保留配置、历史数据、人工对应和复盘日记。"
 }
