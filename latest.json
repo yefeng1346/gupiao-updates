@@ -1,10 +1,10 @@
 {
-  "version": "1.7.7",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-10-compact-flow-mapping-v1.7.7.zip",
+  "version": "1.7.8",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-13-index-futures-v1.7.8.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.7.7/gupiao-windows-2026-11-10-compact-flow-mapping-v1.7.7.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.7.8/gupiao-windows-2026-11-13-index-futures-v1.7.8.zip"
   ],
-  "sha256": "4d8b147be6da873ae70e6fef65b066f48deb95a5bdb52ca689095761e09f6c40",
-  "published_at": "2026-11-10",
-  "notes": "简化三日资金列：原有代码或唯一同名自动匹配成功且数据完整时，只显示资金数值，隐藏参考标签、原因展开和核对按钮；手工对应显示“手工匹配”，保留查看/调整和核对记录。对应失效标为手工匹配已停用，未匹配或数据不足继续提供具体原因。普通/双栏一致，不改变匹配规则、排名或资金计算。升级保留配置、历史数据、人工对应和复盘日记。"
+  "sha256": "09a2ec6ec2fd18589641696adf53b0790f568a00ac54fb841513fcac40c4797d",
+  "published_at": "2026-11-13",
+  "notes": "第7榜增加报告日最新排名前200名限制，仍按最近10个可用交易日的9次相邻比较至少6次前进筛选。新增期指多空导航，免费获取中金所IF/IC/IH/IM收盘后公开会员持仓，提供机构对照、月份明细、可调整分组和每日摘要。打开仅恢复本机记录，点击更新才联网。缺侧不补零，合约覆盖回退不覆盖旧数据，超时/失败保留记录。代客持仓不等于机构自营观点，净空减少不代表实际减空；免费排名不保证完整分组合计，HTTP来源明确提示。升级保留Key、历史、人工对应、分组和复盘日记。"
 }
