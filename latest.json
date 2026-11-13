@@ -1,10 +1,10 @@
 {
-  "version": "1.7.9",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-13-futures-disclosure-v1.7.9.zip",
+  "version": "1.8.0",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-13-futures-analysis-v1.8.0.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.7.9/gupiao-windows-2026-11-13-futures-disclosure-v1.7.9.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.8.0/gupiao-windows-2026-11-13-futures-analysis-v1.8.0.zip"
   ],
-  "sha256": "77da4e77b21e216a34e2f9aa3a2afd6a9ae5fa4e468a6f5e367f2a430bf4d33b",
+  "sha256": "245fd5d20e7eebcdae411ee5dcad766ecd280074379770175e009c57b8ecb230",
   "published_at": "2026-11-13",
-  "notes": "改善期指持仓缺失显示：已公布多单、空单分别显示数值及各自覆盖情况，明确标记完整/部分；未公布不当作0，真实公布0仍保留。可展开缺失明细查看具体会员、合约与方向，区分未入公开前20名和品种文件未取得；范围未知不冒充完整覆盖。不将不同覆盖范围的部分合计相减，完整净空和变化仍仅在必要数据齐全时计算。已有记录直接重新展示，无需清空历史或重新下载。保留前200名进步榜、免费数据源和全部既有功能，升级保留Key、历史、机构分组、人工对应及复盘日记。"
+  "notes": "新增免费客观持仓解读：分别说明四类期指及机构合计的净持仓变化、当前净多/净空，明确实际数据日期；不把向多变化当作实际加多或涨跌预测，不调用LLM。新增真实历史净持仓曲线，查看截至所选日期最近30个已知交易日的本地记录，可切换重点会员/其他所选会员/两组合计及单品种/合计。缺失、覆盖不足、合约范围变化处断线；真实0保留，只有1点不连线。当前分组统一重算历史，不使用所选日期之后的数据；不是价格预测图。升级保留Key、历史、分组、人工对应和复盘日记。"
 }
