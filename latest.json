@@ -1,10 +1,10 @@
 {
-  "version": "1.8.2",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-16-sse-etf-summary-v1.8.2.zip",
+  "version": "1.8.3",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-16-sse-etf-resume-v1.8.3.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.8.2/gupiao-windows-2026-11-16-sse-etf-summary-v1.8.2.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.8.3/gupiao-windows-2026-11-16-sse-etf-resume-v1.8.3.zip"
   ],
-  "sha256": "7a168774404fc0d37a8ff8a6f3337d04f11d60b392a5ca3bcb2506d4b23cdc89",
+  "sha256": "853b59725846e772e3f7145d9136d22cda6b1197815ecf0b5907378cbf0ec738",
   "published_at": "2026-11-16",
-  "notes": "新增上交所ETF近20个交易日净申赎额文字统计（估算），显示逐日金额、完整日数与完整区间累计，不新增表格或图表。按每日沪市名单、前一日份额和当日净值核验，不混深市、不用今天名单代替历史。缺日、缺净值、名单进出或已识别分红折算时不出不完整全市场合计，不补零；正数净申购、负数净赎回，不是实际现金流。专用免费一键更新/继续补缺，逐只保存，切换来源只读缓存，首次可能多轮。保留原沪深ETF日/5日榜及期指每周摘要。升级保留Key、配置、历史、分组、人工对应、候选与复盘日记。"
+  "notes": "上交所ETF20日补缺改为按缺失日期续传：只请求尚缺的净值日期，相邻缺口合并，不跨过已保存交易日重复下载；备用来源也只请求尚缺日期。份额/名单已核验日期跳过。份额日期、净值代码与单只ETF日期位置写入本机SQLite，重启后恢复、按来源隔离；半途取得的数据逐条保留，已保存值不覆盖。新增净值记录已完成/总量、剩余和本轮新增，区分市场完整日数；任务全部收尾后才显示结束。保留免费源、原ETF榜、期指摘要、Key、配置、全部历史、人工对应、候选及复盘日记。外部接口缺失或需复核数据仍不补零、不冒充完整统计。"
 }
