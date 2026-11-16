@@ -1,10 +1,10 @@
 {
-  "version": "1.8.0",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-13-futures-analysis-v1.8.0.zip",
+  "version": "1.8.1",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-16-futures-weekly-v1.8.1.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.8.0/gupiao-windows-2026-11-13-futures-analysis-v1.8.0.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.8.1/gupiao-windows-2026-11-16-futures-weekly-v1.8.1.zip"
   ],
-  "sha256": "245fd5d20e7eebcdae411ee5dcad766ecd280074379770175e009c57b8ecb230",
-  "published_at": "2026-11-13",
-  "notes": "新增免费客观持仓解读：分别说明四类期指及机构合计的净持仓变化、当前净多/净空，明确实际数据日期；不把向多变化当作实际加多或涨跌预测，不调用LLM。新增真实历史净持仓曲线，查看截至所选日期最近30个已知交易日的本地记录，可切换重点会员/其他所选会员/两组合计及单品种/合计。缺失、覆盖不足、合约范围变化处断线；真实0保留，只有1点不连线。当前分组统一重算历史，不使用所选日期之后的数据；不是价格预测图。升级保留Key、历史、分组、人工对应和复盘日记。"
+  "sha256": "f2a7eb1de922da3e57c6d82b419081aca9d0e9e68b3af34eb962bc1d5e2de557",
+  "published_at": "2026-11-16",
+  "notes": "期指页面收紧：日期、覆盖、保存日期、HTTP警告与口径说明默认折叠，点击查看；移除客观持仓解读，保留真实历史曲线及原有表格。在每日摘要下新增每周摘要，按目标交易日所在自然周截至该日汇总每日公布的净空增减，分别展示中信、其他所选会员及两组合计。缺日、覆盖不足、合约范围变化时不显示部分累计，明确原因；不拿上周数据冒充本周、不补零、不调用AI。升级保留Key、配置、历史、分组、候选、人工对应及复盘日记。"
 }
