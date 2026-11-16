@@ -1,10 +1,10 @@
 {
-  "version": "1.8.1",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-16-futures-weekly-v1.8.1.zip",
+  "version": "1.8.2",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-16-sse-etf-summary-v1.8.2.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.8.1/gupiao-windows-2026-11-16-futures-weekly-v1.8.1.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.8.2/gupiao-windows-2026-11-16-sse-etf-summary-v1.8.2.zip"
   ],
-  "sha256": "f2a7eb1de922da3e57c6d82b419081aca9d0e9e68b3af34eb962bc1d5e2de557",
+  "sha256": "7a168774404fc0d37a8ff8a6f3337d04f11d60b392a5ca3bcb2506d4b23cdc89",
   "published_at": "2026-11-16",
-  "notes": "期指页面收紧：日期、覆盖、保存日期、HTTP警告与口径说明默认折叠，点击查看；移除客观持仓解读，保留真实历史曲线及原有表格。在每日摘要下新增每周摘要，按目标交易日所在自然周截至该日汇总每日公布的净空增减，分别展示中信、其他所选会员及两组合计。缺日、覆盖不足、合约范围变化时不显示部分累计，明确原因；不拿上周数据冒充本周、不补零、不调用AI。升级保留Key、配置、历史、分组、候选、人工对应及复盘日记。"
+  "notes": "新增上交所ETF近20个交易日净申赎额文字统计（估算），显示逐日金额、完整日数与完整区间累计，不新增表格或图表。按每日沪市名单、前一日份额和当日净值核验，不混深市、不用今天名单代替历史。缺日、缺净值、名单进出或已识别分红折算时不出不完整全市场合计，不补零；正数净申购、负数净赎回，不是实际现金流。专用免费一键更新/继续补缺，逐只保存，切换来源只读缓存，首次可能多轮。保留原沪深ETF日/5日榜及期指每周摘要。升级保留Key、配置、历史、分组、人工对应、候选与复盘日记。"
 }
