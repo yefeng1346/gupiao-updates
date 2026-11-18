@@ -1,10 +1,10 @@
 {
-  "version": "1.8.3",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-16-sse-etf-resume-v1.8.3.zip",
+  "version": "1.8.4",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-18-broad-etf-v1.8.4.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.8.3/gupiao-windows-2026-11-16-sse-etf-resume-v1.8.3.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.8.4/gupiao-windows-2026-11-18-broad-etf-v1.8.4.zip"
   ],
-  "sha256": "853b59725846e772e3f7145d9136d22cda6b1197815ecf0b5907378cbf0ec738",
-  "published_at": "2026-11-16",
-  "notes": "上交所ETF20日补缺改为按缺失日期续传：只请求尚缺的净值日期，相邻缺口合并，不跨过已保存交易日重复下载；备用来源也只请求尚缺日期。份额/名单已核验日期跳过。份额日期、净值代码与单只ETF日期位置写入本机SQLite，重启后恢复、按来源隔离；半途取得的数据逐条保留，已保存值不覆盖。新增净值记录已完成/总量、剩余和本轮新增，区分市场完整日数；任务全部收尾后才显示结束。保留免费源、原ETF榜、期指摘要、Key、配置、全部历史、人工对应、候选及复盘日记。外部接口缺失或需复核数据仍不补零、不冒充完整统计。"
+  "sha256": "6d9c0d6f361ea9b2e9f06943fa38d9cbf8dee4cc7f5bb4120c33040060e140aa",
+  "published_at": "2026-11-18",
+  "notes": "资金流向新增11个宽指ETF净申购／净赎回文字摘要，按标的指数合并沪深两市被动ETF，支持日和近5个交易日，免费取数、按覆盖只数展示。上交所ETF20日统计允许显示部分日期的已覆盖估算及未纳入原因；不把缺失按零处理，20日均完整才显示全市场区间合计。保留原ETF榜、历史补缺进度、配置、Key、数据和复盘日记。"
 }
