@@ -1,10 +1,10 @@
 {
-  "version": "1.8.4",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-18-broad-etf-v1.8.4.zip",
+  "version": "1.8.5",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-18-broad-etf-weekly-v1.8.5.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.8.4/gupiao-windows-2026-11-18-broad-etf-v1.8.4.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.8.5/gupiao-windows-2026-11-18-broad-etf-weekly-v1.8.5.zip"
   ],
-  "sha256": "6d9c0d6f361ea9b2e9f06943fa38d9cbf8dee4cc7f5bb4120c33040060e140aa",
+  "sha256": "925f76cad1893bf7f0404ec6345697db5185cd7a970e079afc81cac4db907db2",
   "published_at": "2026-11-18",
-  "notes": "资金流向新增11个宽指ETF净申购／净赎回文字摘要，按标的指数合并沪深两市被动ETF，支持日和近5个交易日，免费取数、按覆盖只数展示。上交所ETF20日统计允许显示部分日期的已覆盖估算及未纳入原因；不把缺失按零处理，20日均完整才显示全市场区间合计。保留原ETF榜、历史补缺进度、配置、Key、数据和复盘日记。"
+  "notes": "宽指ETF卡片改为净申购／净赎回分栏，放大指数名称和金额，净赎回带负号，窄窗自动单栏。增加当前区间的总净申购与总净赎回，以及独立的自然周小结，缺失和部分覆盖分别标注，跨周不沿用上周数字。不新增付费来源、不自动联网。升级保留配置、Key、历史数据和复盘日记。"
 }
