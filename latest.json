@@ -1,10 +1,10 @@
 {
-  "version": "1.8.6",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-19-flow-search-v1.8.6.zip",
+  "version": "1.8.7",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-20-futures-missing-dialog-v1.8.7.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.8.6/gupiao-windows-2026-11-19-flow-search-v1.8.6.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.8.7/gupiao-windows-2026-11-20-futures-missing-dialog-v1.8.7.zip"
   ],
-  "sha256": "2e679799b2ea8e18e8785c0ee6f42fa9c415c894d939daf0092745ba88c6c4c4",
-  "published_at": "2026-11-19",
-  "notes": "当前资金流向新增按板块名称或 BK 代码查找，点击定位或按回车滚动高亮；前 N 名之外的匹配项临时加一行，原排名和显示设置不变。宽指 ETF 明细恢复普通表格字号，保留净赎回负号、区间合计和自然周小结。升级保留配置和历史数据。"
+  "sha256": "e3f2c76f344eec9652ab276e8e2f3dc5a17f565d58bf6865c2d782f9757d589f",
+  "published_at": "2026-11-20",
+  "notes": "期指多空表格的缺失明细改为弹窗，按合约并排查看多单、空单原因，不再撑高表格。未进入公开前20名与品种文件未取得分别提示；缺失不补零，完整净空统计口径不变。升级保留配置和历史数据。"
 }
