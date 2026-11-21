@@ -1,10 +1,10 @@
 {
-  "version": "1.8.7",
-  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-20-futures-missing-dialog-v1.8.7.zip",
+  "version": "1.8.8",
+  "url": "https://raw.githubusercontent.com/yefeng1346/gupiao-updates/main/gupiao-windows-2026-11-21-futures-eastmoney-v1.8.8.zip",
   "urls": [
-    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.8.7/gupiao-windows-2026-11-20-futures-missing-dialog-v1.8.7.zip"
+    "https://github.com/yefeng1346/gupiao-updates/releases/download/v1.8.8/gupiao-windows-2026-11-21-futures-eastmoney-v1.8.8.zip"
   ],
-  "sha256": "e3f2c76f344eec9652ab276e8e2f3dc5a17f565d58bf6865c2d782f9757d589f",
-  "published_at": "2026-11-20",
-  "notes": "期指多空表格的缺失明细改为弹窗，按合约并排查看多单、空单原因，不再撑高表格。未进入公开前20名与品种文件未取得分别提示；缺失不补零，完整净空统计口径不变。升级保留配置和历史数据。"
+  "sha256": "51e47180c66ccd0b6912d0da5f0944c941e46e2bac723e05767fbb7d6e1b804e",
+  "published_at": "2026-11-21",
+  "notes": "期指多空新增独立的东财净持仓对比，支持五家代客会员及查询日，汇总四类期指的净多单减净空单，同范围且齐全才和上一个交易日比较。缺失不补零，点击更新才取数，保留既有中金所数据、配置和历史。"
 }
